@@ -1,8 +1,7 @@
-// src/pages/RoleSelection.js
 import { useState } from "react";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, User, Users, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import { ArrowLeft } from "lucide-react";
 export default function RoleSelection() {
   const navigate = useNavigate();
   const [activeRole, setActiveRole] = useState(null);
@@ -15,6 +14,7 @@ export default function RoleSelection() {
     {
       id: "user",
       title: "Create a Customer Account",
+      icon: <User size={22} />,
       points: [
         "View available training sessions, book slots, and track schedule updates.",
         "Purchase gym merchandise, supplements, and training equipment conveniently.",
@@ -25,6 +25,7 @@ export default function RoleSelection() {
     {
       id: "trainer",
       title: "Create a Trainer Profile",
+      icon: <Users size={22} />,
       points: [
         "Manage member details, progress, and communication.",
         "Update and maintain trainer profiles with achievements and specialties.",
@@ -35,6 +36,7 @@ export default function RoleSelection() {
     {
       id: "institute",
       title: "Onboard Your Institute",
+      icon: <Building2 size={22} />,
       points: [
         "Manage member details, progress, and communication.",
         "Update and maintain trainer profiles with achievements and specialties.",
@@ -43,6 +45,7 @@ export default function RoleSelection() {
       ],
     },
   ];
+
   const getSignupPath = (role) => {
     switch (role) {
       case "user":
@@ -55,63 +58,79 @@ export default function RoleSelection() {
         return "/signup";
     }
   };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-3 sm:px-6 md:px-10 lg:px-16">
-      <div className="bg-white w-full max-w-sm sm:max-w-xl md:max-w-2xl lg:max-w-4xl rounded-lg p-4 sm:p-6 md:p-8 lg:p-10 text-center">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-orange-500 mb-2 sm:mb-3">
-          Create Your Account
+    <div
+      className="min-h-screen flex items-center justify-center px-4 
+    bg-gradient-to-b from-[#401F00] via-[#FF7A00] to-[#401F00]"
+    >
+      <button
+        onClick={() => navigate("/")}
+        className="absolute left-0 top-0 flex items-center gap-2 
+    text-white bg-black/20 px-3 py-1.5 rounded-md backdrop-blur-sm"
+      >
+        <ArrowLeft size={18} />
+        <span className="text-sm">Back</span>
+      </button>
+      <div className="w-full max-w-lg mx-auto text-center">
+        {/* Heading */}
+        <h1 className="text-2xl sm:text-3xl font-bold text-black">
+          Welcome to Kridana
         </h1>
 
-        <p className="text-gray-700 mb-8">
-          Get access to opportunities, institutes, and certified trainers in one
-          location.
+        <p className="text-white mt-2 mb-6 text-sm sm:text-base">
+          choose your account type to get started
         </p>
 
-        <div className="bg-[#E7B89E] p-6 rounded-lg space-y-5">
+        {/* Cards */}
+        <div className="space-y-4">
           {roles.map((role) => (
             <div key={role.id}>
-              {/* HEADER */}
+              {/* CARD HEADER */}
               <div
                 onClick={() => toggleRole(role.id)}
-                className={`flex justify-between items-center px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5
-border-2 border-orange-500 rounded-lg cursor-pointer
-bg-white hover:bg-orange-50 transition-all duration-300`}
+                className="flex items-center justify-between 
+                bg-white rounded-lg shadow-sm border border-gray-100 
+                px-4 py-4 cursor-pointer"
               >
-                <span className="text-lg font-semibold text-black">
-                  {role.title}
-                </span>
+                {/* LEFT */}
+                <div className="flex items-center gap-3">
+                  <div className="text-[#FF6A00]">{role.icon}</div>
 
-                {activeRole === role.id ? (
-                  <ChevronDown className="text-orange-500" size={26} />
-                ) : (
-                  <ChevronRight className="text-orange-500" size={26} />
-                )}
+                  <span className="font-semibold text-black text-sm sm:text-base">
+                    {role.title}
+                  </span>
+                </div>
+
+                {/* RIGHT ARROW */}
+                <ChevronRight className="text-black" size={20} />
               </div>
 
-              {/* BODY */}
+              {/* EXPAND SECTION (same logic preserved) */}
               <div
-                className={`overflow-hidden transition-all duration-500 
-                ${activeRole === role.id ? "max-h-[1000px] mt-3" : "max-h-0"}`}
+                className={`overflow-hidden transition-all duration-500 ${
+                  activeRole === role.id ? "max-h-[500px] mt-3" : "max-h-0"
+                }`}
               >
-                <div className="border-2 border-orange-500 rounded-lg bg-white text-left px-6 py-5">
-                  <ul className="list-disc pl-5 space-y-2 text-black">
+                <div className="bg-white rounded-lg border border-gray-100 p-4 text-left">
+                  <ul className="list-disc pl-5 space-y-2 text-sm text-black">
                     {role.points.map((point, i) => (
                       <li key={i}>{point}</li>
                     ))}
                   </ul>
 
                   {/* BUTTONS */}
-                  <div className="flex flex-col sm:flex-row justify-end gap-3 mt-5">
+                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
                     <button
                       onClick={() => navigate(getSignupPath(role.id))}
-                      className="bg-orange-500 px-5 py-2 rounded-md text-white font-semibold hover:bg-orange-600"
+                      className="w-full bg-[#FF6A00] text-white py-2 rounded-md font-semibold"
                     >
                       Sign Up
                     </button>
 
                     <button
                       onClick={() => navigate(`/login?role=${role.id}`)}
-                      className="bg-gray-700 px-5 py-2 rounded-md text-white font-semibold hover:bg-gray-800"
+                      className="w-full border border-gray-300 py-2 rounded-md font-semibold text-black"
                     >
                       Sign In
                     </button>

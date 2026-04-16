@@ -5,6 +5,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
+import { Filter } from "lucide-react";
 export default function ViewInstitutes() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,7 +17,7 @@ export default function ViewInstitutes() {
   const defaultCategory = searchParams.get("category") || "";
   const defaultSubCategory = searchParams.get("subCategory") || "";
   const isSubCategoryFromURL = Boolean(defaultSubCategory);
-
+  const [showFilters, setShowFilters] = useState(false);
   const [category, setCategory] = useState(defaultCategory);
   const [subCategory, setSubCategory] = useState(defaultSubCategory);
   const [city, setCity] = useState("");
@@ -362,9 +363,21 @@ export default function ViewInstitutes() {
   return (
     <div className="min-h-screen bg-white px-6 md:px-16 py-12">
       <h1 className="text-4xl font-bold text-[#ff7a00] mb-8">Institutes</h1>
+      <div className="md:hidden flex justify-between items-center px-4 py-3 border-b bg-white sticky top-0 z-40">
+        <h1 className="text-lg font-bold text-[#ff7a00]">
+          {category || "Institutes"}
+        </h1>
 
+        <button
+          onClick={() => setShowFilters(true)}
+          className="flex items-center gap-2 border px-3 py-1.5 rounded-md text-sm"
+        >
+          <Filter size={16} />
+          Filters
+        </button>
+      </div>
       {/* FILTERS */}
-      <div className="grid grid-cols-1 md:grid-cols-[repeat(4,minmax(180px,1fr))] gap-4 mb-8">
+      <div className="hidden md:grid grid-cols-1 md:grid-cols-[repeat(4,minmax(180px,1fr))] gap-4 mb-8">
         {/* Category */}
         {/* CATEGORY CUSTOM DROPDOWN */}
         <div className="relative">
@@ -385,7 +398,7 @@ rounded-md px-3 h-[45px] cursor-pointer`}
           </div>
 
           {showCategoryDropdown && (
-            <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow max-h-[180px] overflow-y-auto">
+            <div className="absolute z-50 left-0 right-0 mt-1 bg-white border rounded-md shadow max-h-[200px] overflow-y-auto">
               {categories.map((cat) => (
                 <div
                   key={cat}
@@ -394,7 +407,7 @@ rounded-md px-3 h-[45px] cursor-pointer`}
                     setSubCategory("");
                     setShowCategoryDropdown(false);
                   }}
-                  className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer"
+                  className="px-4 py-3 text-sm hover:bg-blue-600 hover:text-white active:bg-orange-500 active:text-white cursor-pointer"
                 >
                   {cat}
                 </div>
@@ -424,7 +437,7 @@ rounded-md px-3 h-[45px] cursor-pointer`}
           </div>
 
           {showSubCategoryDropdown && category && (
-            <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow max-h-[180px] overflow-y-auto">
+            <div className="fixed left-4 right-4 top-[140px] z-[999] bg-white border rounded-md shadow max-h-[250px] overflow-y-auto">
               {(subCategoryMap[category] || []).map((sub) => (
                 <div
                   key={sub}
@@ -505,59 +518,237 @@ rounded-md px-3 h-[45px] cursor-pointer`}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-20">
-          {filteredInstitutes.map((inst) => (
-            <div
-              key={inst.id}
-              onClick={() => navigate(`/institutes/${inst.id}`)}
-              className="bg-white rounded-[18px] shadow-lg border cursor-pointer hover:scale-[1.02] transition-transform flex flex-col justify-between h-[320px]"
-            >
-              <div className="h-[160px] rounded-t-[18px] overflow-hidden flex items-center justify-center bg-white">
-                {inst.profileImageUrl ? (
-                  <img
-                    src={inst.profileImageUrl}
-                    alt={inst.instituteName}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-white" />
-                )}
+          {/* LIST */}
+          {filteredInstitutes.length === 0 ? (
+            <div className="text-center mt-12">
+              <img
+                src="/institue.png"
+                alt="No trainers"
+                className="mx-auto w-32 mb-4 opacity-80"
+              />
+              <h1 className="text-2xl font-bold mb-2">
+                We're curating the best institutes for you
+              </h1>
+              <p className="text-gray-500 text-xl">
+                Our team is reviewing and adding top-notch institutes.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* ================= MOBILE VIEW ================= */}
+              <div className="md:hidden flex flex-col gap-4 mt-6">
+                {filteredInstitutes.map((inst) => (
+                  <div
+                    key={inst.id}
+                    className="bg-[#FFF7F2] rounded-xl p-4 shadow-sm border border-gray-100"
+                  >
+                    {/* TOP ROW */}
+                    <div className="flex gap-4 items-center">
+                      {/* Avatar */}
+                      <div className="w-16 h-16 rounded-full overflow-hidden bg-white border">
+                        {inst.profileImageUrl ? (
+                          <img
+                            src={inst.profileImageUrl}
+                            alt={inst.instituteName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200" />
+                        )}
+                      </div>
+
+                      {/* TEXT */}
+                      <div className="flex-1">
+                        <h2 className="font-bold text-base text-gray-900">
+                          {inst.instituteName}
+                        </h2>
+
+                        <p className="text-sm text-gray-500">
+                          {Object.keys(inst.categories || {})[0] || "Institute"}
+                        </p>
+
+                        <p className="text-xs text-gray-400">
+                          {inst.city}, {inst.state} ({inst.students || 0}{" "}
+                          Students)
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* BUTTONS */}
+                    <div className="flex gap-3 mt-4">
+                      <button className="bg-[#FF6A00] text-white rounded-md py-2 px-4 font-bold flex-1 active:scale-95 transition">
+                        Message
+                      </button>
+
+                      <button
+                        onClick={() => navigate(`/institutes/${inst.id}`)}
+                        className="border-2 border-[#FF6A00] text-[#FF6A00] rounded-md py-2 px-4 font-bold flex-1 bg-white active:scale-95 transition"
+                      >
+                        View Profile
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="p-4 text-center flex flex-col justify-between h-full">
-                <h2 className="text-xl sm:text-2xl font-bold line-clamp-1 min-h-[28px]">
-                  {inst.instituteName}
-                </h2>
-                <p className="text-gray-500 text-sm sm:text-base min-h-[20px]">
-                  {inst.city}, {inst.state}
-                </p>
-                <p className="font-semibold mt-1 text-sm sm:text-base flex items-center justify-center gap-1 min-h-[24px]">
-                  {inst.rating ? (
-                    <>
-                      <span className="text-yellow-500">⭐</span>
-                      {inst.rating.toFixed(1)}
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-gray-400">☆</span>
-                      <span className="text-gray-400">No ratings</span>
-                    </>
-                  )}
-                </p>
-                <p className="mt-1 text-gray-600 text-xs sm:text-sm min-h-[30px]">
-                  Categories:{" "}
-                  {inst.categories
-                    ? Object.keys(inst.categories).join(", ")
-                    : "N/A"}
-                </p>
-                <button
-                  className="mt-3 w-full bg-[#ff7a00] text-white py-2 rounded-lg text-sm"
-                  onClick={() => navigate(`/institutes/${inst.id}`)}
+              {/* ================= DESKTOP VIEW ================= */}
+              <div className="hidden md:grid grid-cols-1 md:grid-cols-[repeat(4,minmax(180px,1fr))] gap-4 mb-8">
+                {filteredInstitutes.map((inst) => (
+                  <div
+                    key={inst.id}
+                    onClick={() => navigate(`/institutes/${inst.id}`)}
+                    className="bg-white rounded-[18px] shadow-lg border cursor-pointer hover:scale-[1.02] transition-transform flex flex-col justify-between h-[320px]"
+                  >
+                    <div className="h-[160px] rounded-t-[18px] overflow-hidden flex items-center justify-center bg-white">
+                      {inst.profileImageUrl ? (
+                        <img
+                          src={inst.profileImageUrl}
+                          alt={inst.instituteName}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-white" />
+                      )}
+                    </div>
+
+                    <div className="p-4 text-center flex flex-col justify-between h-full">
+                      <h2 className="text-lg font-bold line-clamp-1">
+                        {inst.instituteName}
+                      </h2>
+
+                      <p className="text-gray-500 text-sm">
+                        {inst.city}, {inst.state}
+                      </p>
+
+                      <p className="font-semibold text-sm flex justify-center gap-1">
+                        {inst.rating ? (
+                          <>
+                            <span className="text-yellow-500">⭐</span>
+                            {inst.rating.toFixed(1)}
+                          </>
+                        ) : (
+                          <span className="text-gray-400">No ratings</span>
+                        )}
+                      </p>
+
+                      <button className="mt-3 w-full bg-[#ff7a00] text-white py-2 rounded-lg text-sm">
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}{" "}
+        </div>
+      )}
+      {/* ✅ FILTER POPUP - ALWAYS AVAILABLE */}
+      {showFilters && (
+        <div className="fixed inset-0 z-50 flex items-end">
+          {/* BACKDROP */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowFilters(false)}
+          />
+
+          {/* BOTTOM SHEET */}
+          <div className="relative bg-white w-full rounded-t-2xl p-5 max-h-[85vh] overflow-y-auto animate-slideUp">
+            {/* HEADER */}
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white">
+              <h2 className="text-lg font-bold">Filters</h2>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-gray-500 text-sm"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* FILTERS */}
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="text-sm font-semibold">Category</label>
+                <select
+                  className="w-full border rounded-md p-2 mt-1"
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setSubCategory("");
+                  }}
                 >
-                  View Details
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold">Sub Category</label>
+                <select
+                  className="w-full border rounded-md p-2 mt-1"
+                  value={subCategory}
+                  onChange={(e) => setSubCategory(e.target.value)}
+                  disabled={!category}
+                >
+                  <option value="">All Subcategories</option>
+                  {(subCategoryMap[category] || []).map((sub) => (
+                    <option key={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold">City</label>
+                <select
+                  className="w-full border rounded-md p-2 mt-1"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                >
+                  <option value="">All Cities</option>
+                  {[
+                    ...new Set(institutes.map((i) => i.city).filter(Boolean)),
+                  ].map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold">Minimum Rating</label>
+                <select
+                  className="w-full border rounded-md p-2 mt-1"
+                  value={minRating}
+                  onChange={(e) => setMinRating(e.target.value)}
+                >
+                  <option value="">Any Rating</option>
+                  <option value="3">3★+</option>
+                  <option value="4">4★+</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => {
+                    setCategory("");
+                    setSubCategory("");
+                    setCity("");
+                    setMinRating("");
+                  }}
+                  className="flex-1 border rounded-md py-2"
+                >
+                  Reset
+                </button>
+
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="flex-1 bg-[#FF6A00] text-white py-2 rounded-md font-bold"
+                >
+                  Apply
                 </button>
               </div>
             </div>
-          ))}
+          </div>
         </div>
       )}
     </div>

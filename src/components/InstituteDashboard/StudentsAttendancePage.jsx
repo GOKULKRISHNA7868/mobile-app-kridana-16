@@ -272,62 +272,64 @@ const StudentsAttendancePage = () => {
 
     return Array.from(set);
   }, [students]);
+
   const handleSaveAll = async () => {
-    if (!selectedCategory || !selectedSubCategory) {
-      alert("Please select both Category and Sub Category before saving ❌");
-      return;
-    }
-    for (const rec of Object.values(draftAttendance)) {
-      if (rec?.status === "absent" && !rec?.reason) {
-        alert("Please select reason for all absent students");
+    try {
+      if (!selectedCategory || !selectedSubCategory) {
+        alert("Please select Category and Sub Category ❌");
         return;
       }
+
+      let savedCount = 0;
+
+      const promises = Object.entries(draftAttendance)
+        .map(([key, status]) => {
+          const parts = key.split("||");
+
+          const studentId = parts[0];
+          const category = parts[1];
+          const subCategory = parts[2];
+
+          if (!studentId || !category || !subCategory) return null;
+
+          const student = students.find((s) => s.uid === studentId);
+
+          savedCount++;
+          const safeCategory = category.replace(/\//g, "-");
+          const safeSubCategory = subCategory.replace(/\//g, "-");
+
+          const docId = `${studentId}_${selectedDate}_${safeCategory}_${safeSubCategory}`;
+          return setDoc(
+            doc(db, "institutes", user.uid, "attendance", docId),
+            {
+              instituteId: user.uid,
+              studentId,
+              category,
+              subCategory,
+              session: student?.sessions || "General",
+              date: selectedDate,
+              day: getDayName(selectedDate),
+              time: selectedTime || "",
+              status: status.status,
+              reason: status.reason || "",
+              updatedAt: serverTimestamp(),
+              createdAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+        })
+        .filter(Boolean);
+
+      await Promise.all(promises);
+
+      // ✅ SUCCESS ALERT
+      alert(`Attendance saved successfully ✅ (${savedCount} students)`);
+    } catch (error) {
+      console.error("Save Error:", error);
+
+      // ❌ ERROR ALERT (IMPORTANT FOR MOBILE DEBUGGING)
+      alert("Failed to save attendance ❌ Check console");
     }
-    const dayName = getDayName(selectedDate);
-
-    const promises = Object.entries(draftAttendance)
-      .map(([key, status]) => {
-        const parts = key.split("||");
-
-        const studentId = parts[0];
-        const category = parts[1] || "";
-        const subCategory = parts[2] || "";
-
-        if (!studentId || !category || !subCategory) {
-          console.warn("Skipping invalid record:", key);
-          return null; // 🚫 skip invalid
-        }
-
-        const student = students.find((s) => s.uid === studentId);
-
-        return setDoc(
-          doc(
-            db,
-            "institutes",
-            user.uid,
-            "attendance",
-            `${studentId}_${selectedDate}_${category}_${subCategory}`,
-          ),
-          {
-            instituteId: user.uid,
-            studentId,
-            category,
-            subCategory,
-            session: student?.sessions || "General",
-            date: selectedDate,
-            day: dayName,
-            time: selectedTime || "",
-            status: status.status,
-            reason: status.reason || "",
-            updatedAt: serverTimestamp(),
-            createdAt: serverTimestamp(),
-          },
-          { merge: true },
-        );
-      })
-      .filter(Boolean); // ✅ remove nulls
-    await Promise.all(promises);
-    alert("Attendance saved ✅");
   };
   useEffect(() => {
     setCurrentPage(1);
@@ -342,8 +344,7 @@ const StudentsAttendancePage = () => {
     setDraftAttendance({ ...attendance });
   };
 
-  const hasChanges =
-    JSON.stringify(draftAttendance) !== JSON.stringify(attendance);
+  const hasChanges = Object.keys(draftAttendance).length > 0;
 
   // Export CSV
   const exportAttendanceRange = async () => {
@@ -425,309 +426,231 @@ const StudentsAttendancePage = () => {
   };
 
   return (
-    <div className="w-full p-3 sm:p-4 md:p-6 lg:p-8 bg-[#F3F4F6] min-h-screen max-w-7xl mx-auto">
+    <div className="w-full min-h-screen bg-white p-3 sm:p-4 pb-24">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-6 w-full">
-        <h1 className="text-3xl font-bold text-orange-500 flex items-center gap-2">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold text-[#FF6A00]">
           Students Attendance
         </h1>
+
         <input
           type="date"
           value={selectedDate}
-          max={today} // 🔒 NO FUTURE DATE
+          max={today}
           onChange={(e) => {
             setAttendance({});
             setDraftAttendance({});
             setSelectedDate(e.target.value);
           }}
-          className="border bg-orange-500 border-orange-300 rounded-lg px-3 py-2"
+          className="border border-orange-300 rounded-lg px-2 py-1 text-sm"
         />
       </div>
 
-      {/* SUMMARY */}
-      <div className="bg-white border border-orange-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-row justify-between gap-4 mb-6">
-        <div>
-          <p className="text-gray-600">Total Students</p>
-          <h2 className="text-xl font-bold text-orange-500">
-            {summary.totalStudents}
-          </h2>
-        </div>
-
-        <div>
-          <p className="text-gray-600">Present Today</p>
-          <h2 className="text-xl font-bold text-orange-500">
-            {summary.presentToday}
-          </h2>
-        </div>
-
-        <div>
-          <p className="text-gray-600">Absent Today</p>
-          <h2 className="text-xl font-bold text-orange-500">
-            {summary.absentToday}
-          </h2>
-        </div>
+      {/* SUMMARY (MOBILE CARDS) */}
+      <div className="flex gap-3 overflow-x-auto mb-4">
+        {[
+          { label: "Total", value: summary.totalStudents },
+          { label: "Present", value: summary.presentToday },
+          { label: "Absent", value: summary.absentToday },
+        ].map((item, i) => (
+          <div key={i} className="min-w-[120px] bg-orange-100 rounded-xl p-3">
+            <div className="text-xs text-gray-600">{item.label}</div>
+            <div className="text-lg font-bold text-[#FF6A00]">{item.value}</div>
+          </div>
+        ))}
       </div>
 
-      {/* TOOLBAR */}
-      <div className="bg-white border border-orange-200 rounded-xl p-4 mb-6 space-y-4">
-        {/* ROW 1 */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="text-lg font-bold text-black">Attendance Records</div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            {/* SEARCH */}
-            <div className="flex items-center border border-orange-400 rounded-lg px-3 py-2 w-full sm:w-auto min-w-0 sm:min-w-[200px] bg-white">
-              <Search size={18} className="text-gray-500" />
-              <input
-                placeholder="Search Name"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="outline-none ml-2 w-full"
-              />
-            </div>
-
-            {/* EXPORT */}
-            <button
-              onClick={() => setShowExportModal(true)}
-              className="border border-orange-400 text-gray-700 px-5 py-2 rounded-lg flex items-center gap-2 hover:bg-orange-50 transition"
-            >
-              <Download size={18} /> Export
-            </button>
-          </div>
+      {/* SEARCH + FILTER ICON AREA */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center flex-grow border rounded-full px-3 py-2">
+          <Search size={16} />
+          <input
+            className="ml-2 w-full outline-none text-sm"
+            placeholder="Search student..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
 
-        {/* ROW 2 */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* SESSION */}
-          <select
-            value={selectedSession}
-            onChange={(e) => setSelectedSession(e.target.value)}
-            className="bg-white border border-orange-300 rounded-lg px-4 py-2 font-semibold w-full sm:w-auto min-w-0 sm:min-w-[140px]"
-          >
-            <option value="">Session</option>
-            {SESSIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+        {/* KEEP EXPORT */}
+        <button
+          onClick={() => setShowExportModal(true)}
+          className="p-2 border rounded-full"
+        >
+          <Download size={18} />
+        </button>
+      </div>
 
-          {/* BRANCH */}
-          <select
-            value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-            className="bg-white border border-orange-300 rounded-lg px-4 py-2 font-semibold min-w-[140px]"
-          >
-            <option value="">Branch</option>
-            {branches.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+      {/* FILTER ROW (SCROLLABLE) */}
+      <div className="flex gap-2 overflow-x-auto mb-4">
+        <select
+          value={selectedSession}
+          onChange={(e) => setSelectedSession(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm min-w-[120px]"
+        >
+          <option value="">Session</option>
+          {SESSIONS.map((s) => (
+            <option key={s}>{s}</option>
+          ))}
+        </select>
 
-          {/* CATEGORY */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              setSelectedSubCategory("");
-            }}
-            className="bg-white border border-orange-300 rounded-lg px-4 py-2 font-semibold min-w-[160px]"
-          >
-            <option value="">Category</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+        <select
+          value={selectedBranch}
+          onChange={(e) => setSelectedBranch(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm min-w-[120px]"
+        >
+          <option value="">Branch</option>
+          {branches.map((b) => (
+            <option key={b}>{b}</option>
+          ))}
+        </select>
 
-          {/* SUB CATEGORY */}
-          <select
-            value={selectedSubCategory}
-            onChange={(e) => setSelectedSubCategory(e.target.value)}
-            className="bg-white border border-orange-300 rounded-lg px-4 py-2 font-semibold min-w-[160px]"
-          >
-            <option value="">Sub Category</option>
-            {subCategories.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+        <select
+          value={selectedCategory}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            setSelectedSubCategory("");
+          }}
+          className="border rounded-lg px-3 py-2 text-sm min-w-[140px]"
+        >
+          <option value="">Category</option>
+          {categories.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
 
-          {/* TIMINGS */}
-          <div
-            ref={timeRef}
-            className="relative w-full sm:w-auto min-w-0 sm:min-w-[150px]"
-          >
-            <button
-              onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-              className="w-full border border-orange-300 bg-white rounded-lg px-4 py-2 font-semibold flex items-center justify-between"
+        <select
+          value={selectedSubCategory}
+          onChange={(e) => setSelectedSubCategory(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm min-w-[140px]"
+        >
+          <option value="">Sub</option>
+          {subCategories.map((s) => (
+            <option key={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* STUDENT CARDS (MOBILE TABLE REPLACEMENT) */}
+      <div className="space-y-3 pb-28">
+        {paginatedStudents.map((s, index) => {
+          const key = `${s.uid}||${selectedCategory}||${selectedSubCategory}`;
+          const record = draftAttendance[key];
+
+          return (
+            <div
+              key={s.uid}
+              className="bg-white border rounded-xl p-4 shadow-sm"
             >
-              <span>
-                {selectedTime
-                  ? TIME_SLOTS.find((t) => t.value === selectedTime)?.label
-                  : "Timings"}
-              </span>
+              {/* NAME */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="font-semibold text-gray-800">
+                  {index + 1}. {s.firstName} {s.lastName}
+                </div>
+                <div className="text-xs text-gray-500">{s.sessions || "-"}</div>
+              </div>
 
-              <ChevronDown
-                size={18}
-                className={`transition-transform ${
-                  showTimeDropdown ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {showTimeDropdown && (
-              <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-md max-h-40 overflow-y-auto">
-                {TIME_SLOTS.map((t) => (
-                  <div
-                    key={t.value}
-                    onClick={() => {
-                      setSelectedTime(t.value);
-                      setShowTimeDropdown(false);
-                    }}
-                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                  >
-                    {t.label}
+              {/* PRESENT / ABSENT RADIO UI */}
+              <div className="flex items-center justify-between">
+                {/* PRESENT */}
+                <div
+                  onClick={() => saveAttendance(s, "present")}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <div className="w-6 h-6 rounded-full border flex items-center justify-center">
+                    {record?.status === "present" && (
+                      <div className="w-3 h-3 bg-green-500 rounded-full" />
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* TABLE */}
-      <div className="border border-orange-300 rounded-xl overflow-x-auto">
-        <div className="grid grid-cols-5 min-w-[700px] bg-[#1F2937] text-orange-400 font-semibold p-4">
-          <div>Students Name</div>
-          <div>Session</div>
-          <div className="text-center">Present</div>
-          <div className="text-center">Absent</div>
-          <div className="text-center">Reason</div>
-        </div>
-
-        <div className="bg-white min-h-[300px]">
-          {paginatedStudents.map((s, index) => {
-            const key = `${s.uid}||${selectedCategory}||${selectedSubCategory}`;
-            const record = draftAttendance[key];
-
-            return (
-              <div
-                key={s.uid}
-                className="grid grid-cols-5 min-w-[700px] px-6 py-4 border-t items-center"
-              >
-                <div className="flex items-center gap-2">
-                  <span>{(currentPage - 1) * itemsPerPage + index + 1}.</span>
-                  {s.firstName} {s.lastName}
+                  <span className="text-green-600 font-medium">P</span>
                 </div>
 
-                <div>{s.sessions || "-"}</div>
-
-                <div className="flex justify-center">
-                  <input
-                    type="checkbox"
-                    checked={record?.status === "present"}
-                    onChange={() => saveAttendance(s, "present", "")}
-                    className="w-5 h-5"
-                  />
-                </div>
-
-                <div className="flex justify-center">
-                  <input
-                    type="checkbox"
-                    checked={record?.status === "absent"}
-                    onChange={() => saveAttendance(s, "absent")}
-                    className="w-5 h-5"
-                  />
-                </div>
-                <div>
-                  {record?.status === "absent" && (
-                    <select
-                      value={record?.reason || ""}
-                      onChange={(e) =>
-                        saveAttendance(s, "absent", e.target.value)
-                      }
-                      className="border rounded px-2 py-1 w-full"
-                    >
-                      <option value="">Select</option>
-                      {absenceReasons.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                {/* ABSENT */}
+                <div
+                  onClick={() => saveAttendance(s, "absent")}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <div className="w-6 h-6 rounded-full border flex items-center justify-center">
+                    {record?.status === "absent" && (
+                      <div className="w-3 h-3 bg-red-500 rounded-full" />
+                    )}
+                  </div>
+                  <span className="text-red-500 font-medium">A</span>
                 </div>
               </div>
-            );
-          })}
+
+              {/* REASON */}
+              {record?.status === "absent" && (
+                <select
+                  value={record?.reason || ""}
+                  onChange={(e) => saveAttendance(s, "absent", e.target.value)}
+                  className="mt-3 w-full border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="">Select reason</option>
+                  {absenceReasons.map((r) => (
+                    <option key={r}>{r}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          );
+        })}
+        {/* SAVE BUTTON AT END */}
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={handleSaveAll}
+            disabled={!hasChanges}
+            className={`px-6 py-2 text-sm font-semibold rounded-lg text-white ${
+              hasChanges ? "bg-[#FF6A00]" : "bg-gray-300"
+            }`}
+          >
+            Save
+          </button>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mt-6 w-full">
-        <button
-          onClick={handleCancel}
-          className="border border-gray-400 px-5 py-2 rounded-md"
-        >
-          Cancel
-        </button>
+      {/* FIXED SAVE BUTTON (MOBILE APP STYLE) */}
 
-        <button
-          onClick={handleSaveAll}
-          disabled={!hasChanges}
-          className={`px-5 py-2 rounded-md text-white ${
-            hasChanges ? "bg-orange-500" : "bg-gray-400 cursor-not-allowed"
-          }`}
-        >
-          Save
-        </button>
+      {/* PAGINATION (OPTIONAL KEEP) */}
+      <div className="mt-4">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+      {/* KEEP EXPORT MODAL EXACT SAME */}
       {showExportModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-4 sm:p-6 w-[90%] sm:w-[350px] space-y-4">
-            <h2 className="text-lg font-semibold">Export Attendance</h2>
+          <div className="bg-white rounded-xl p-4 w-[90%] space-y-3">
+            <h2 className="font-semibold">Export Attendance</h2>
 
-            <div>
-              <label className="text-sm font-medium">From Date</label>
-              <input
-                type="date"
-                value={exportFromDate}
-                onChange={(e) => setExportFromDate(e.target.value)}
-                className="w-full border border-orange-300 rounded-lg px-3 py-2 mt-1"
-              />
-            </div>
+            <input
+              type="date"
+              value={exportFromDate}
+              onChange={(e) => setExportFromDate(e.target.value)}
+              className="w-full border p-2 rounded"
+            />
 
-            <div>
-              <label className="text-sm font-medium">To Date</label>
-              <input
-                type="date"
-                value={exportToDate}
-                onChange={(e) => setExportToDate(e.target.value)}
-                className="w-full border border-orange-300 rounded-lg px-3 py-2 mt-1"
-              />
-            </div>
+            <input
+              type="date"
+              value={exportToDate}
+              onChange={(e) => setExportToDate(e.target.value)}
+              className="w-full border p-2 rounded"
+            />
 
-            <div className="flex justify-end gap-3">
+            <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowExportModal(false)}
-                className="border px-4 py-1 rounded"
+                className="px-3 py-1 border rounded"
               >
                 Cancel
               </button>
 
               <button
                 onClick={exportAttendanceRange}
-                className="bg-orange-500 text-white px-4 py-1 rounded"
+                className="px-3 py-1 bg-[#FF6A00] text-white rounded"
               >
                 Download
               </button>

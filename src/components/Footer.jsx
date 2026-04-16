@@ -1,66 +1,114 @@
-import React from "react";
+import React, { useState } from "react";
 import { FaLinkedinIn } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 
-const Footer = ({ darkMode }) => {
+const Footer = () => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
+  const [openSection, setOpenSection] = useState(null);
+
+  const toggle = (section) => {
+    setOpenSection(openSection === section ? null : section);
+  };
+
   return (
-    <footer
-      className="w-full py-14"
-      style={{
-        background:
-          "linear-gradient(90deg,#FFE2B8 0%,#FFF1DB 50%,#FFD199 100%)",
-      }}
-    >
-      <div className="max-w-7xl mx-auto px-6">
-        {/* TOP GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 text-center md:text-left items-start">
-          {/* COMPANY (LEFT) */}
-          <div className="flex flex-col gap-3 text-center md:text-left">
-            <h3 className="text-xl font-semibold text-[#DB6A2E]">Company</h3>
-
-            <Link
-              to="/about"
-              onClick={scrollToTop}
-              className="hover:text-[#DB6A2E] text-[#5D3A09]"
+    <footer className="w-full bg-gradient-to-r from-[#FFE2B8] via-[#FFF1DB] to-[#FFD199] py-10">
+      <div className="max-w-7xl mx-auto px-5">
+        {/* MOBILE ACCORDION */}
+        <div className="md:hidden space-y-3">
+          {/* COMPANY */}
+          <div className="bg-white/40 rounded-xl p-4">
+            <button
+              onClick={() => toggle("company")}
+              className="flex justify-between w-full font-semibold text-[#DB6A2E]"
             >
-              About Us
-            </Link>
+              Company <ChevronDown />
+            </button>
 
-            <Link
-              to="/career"
-              onClick={scrollToTop}
-              className="hover:text-[#DB6A2E] text-[#5D3A09]"
-            >
-              Careers
-            </Link>
+            {openSection === "company" && (
+              <div className="mt-3 flex flex-col gap-2 text-[#5D3A09]">
+                <Link onClick={scrollToTop} to="/about">
+                  About Us
+                </Link>
+                <Link onClick={scrollToTop} to="/career">
+                  Careers
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* NEED HELP (CENTER) */}
-          <div className="flex flex-col items-center gap-3 text-center md:text-left">
-            <h3 className="text-xl font-semibold text-[#DB6A2E]">Need Help?</h3>
-
-            <Link
-              to="/help-center"
-              onClick={scrollToTop}
-              className="hover:text-[#DB6A2E] text-[#5D3A09]"
+          {/* HELP */}
+          <div className="bg-white/40 rounded-xl p-4">
+            <button
+              onClick={() => toggle("help")}
+              className="flex justify-between w-full font-semibold text-[#DB6A2E]"
             >
-              Visit Help Centre
-            </Link>
+              Need Help? <ChevronDown />
+            </button>
 
-            <Link
-              to="/feedback"
-              onClick={scrollToTop}
-              className="hover:text-[#DB6A2E] text-[#5D3A09]"
-            >
-              Share Feedback
-            </Link>
+            {openSection === "help" && (
+              <div className="mt-3 flex flex-col gap-2 text-[#5D3A09]">
+                <Link onClick={scrollToTop} to="/help-center">
+                  Help Centre
+                </Link>
+                <Link onClick={scrollToTop} to="/feedback">
+                  Feedback
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* CONNECT WITH US (RIGHT) */}
-        <div className="flex flex-col items-center md:items-end gap-4">
-            <h3 className="text-xl font-semibold text-[#DB6A2E]">
+          {/* CONNECT */}
+          <div className="bg-white/40 rounded-xl p-4 flex justify-between items-center">
+            <span className="font-semibold text-[#DB6A2E]">
+              Connect with Us
+            </span>
+
+            <a
+              href="https://www.linkedin.com/company/kridana-sports-software/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-12 h-12 flex items-center justify-center rounded-full border border-[#DB6A2E] text-[#DB6A2E]"
+            >
+              <FaLinkedinIn size={18} />
+            </a>
+          </div>
+        </div>
+
+        {/* TABLET + DESKTOP GRID */}
+        <div className="hidden md:grid grid-cols-3 gap-10 text-left">
+          {/* COMPANY */}
+          <div>
+            <h3 className="text-lg font-bold text-[#DB6A2E] mb-3">Company</h3>
+            <div className="flex flex-col gap-2 text-[#5D3A09]">
+              <Link onClick={scrollToTop} to="/about">
+                About Us
+              </Link>
+              <Link onClick={scrollToTop} to="/career">
+                Careers
+              </Link>
+            </div>
+          </div>
+
+          {/* HELP */}
+          <div>
+            <h3 className="text-lg font-bold text-[#DB6A2E] mb-3">
+              Need Help?
+            </h3>
+            <div className="flex flex-col gap-2 text-[#5D3A09]">
+              <Link onClick={scrollToTop} to="/help-center">
+                Help Centre
+              </Link>
+              <Link onClick={scrollToTop} to="/feedback">
+                Feedback
+              </Link>
+            </div>
+          </div>
+
+          {/* CONNECT */}
+          <div className="flex flex-col items-start gap-4">
+            <h3 className="text-lg font-bold text-[#DB6A2E]">
               Connect with Us
             </h3>
 
@@ -68,45 +116,31 @@ const Footer = ({ darkMode }) => {
               href="https://www.linkedin.com/company/kridana-sports-software/"
               target="_blank"
               rel="noopener noreferrer"
-              className="
-                w-14 h-14
-                flex items-center justify-center
-                rounded-full
-                border-2 border-[#DB6A2E]
-                text-[#DB6A2E]
-                hover:bg-[#DB6A2E]
-                hover:text-white
-                transition-all duration-300
-              "
+              className="w-14 h-14 flex items-center justify-center rounded-full border-2 border-[#DB6A2E] text-[#DB6A2E] hover:bg-[#DB6A2E] hover:text-white transition"
             >
-              <FaLinkedinIn size={22} />
+              <FaLinkedinIn size={20} />
             </a>
           </div>
         </div>
 
         {/* COPYRIGHT */}
+        <div className="mt-10 border-t border-[#DB6A2E]/30 pt-6 text-center text-[#5D3A09] text-sm">
+          <p>© {new Date().getFullYear()} Kridana. All rights reserved.</p>
 
-        <div className="mt-14 border-t border-[#DB6A2E]/30 pt-6">
-         <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 text-[#5D3A09] text-center">
-            <span>
-              © {new Date().getFullYear()} Kridana. All rights reserved. Kridana
-              is a product of Kdastsho Fintech Solutions Pvt. Ltd., India
-            </span>
-
+          <div className="flex flex-wrap justify-center gap-4 mt-2">
             <Link
+              onClick={scrollToTop}
               to="/terms"
-              onClick={scrollToTop}
               className="hover:text-[#DB6A2E]"
             >
-              Terms & Conditions
+              Terms
             </Link>
-
             <Link
-              to="/privacy"
               onClick={scrollToTop}
+              to="/privacy"
               className="hover:text-[#DB6A2E]"
             >
-              Privacy Policy
+              Privacy
             </Link>
           </div>
         </div>

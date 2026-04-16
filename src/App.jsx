@@ -75,6 +75,8 @@ import { SelectedStudentProvider } from "./context/SelectedStudentContext";
 import ResetPassword from "./pages/ResetPassword";
 import Feedback from "./pages/Feedback";
 import HelpCenter from "./pages/HelpCenter.jsx";
+import MobileCategoriesPage from "./pages/MobileCategoriesPage";
+import MobileEditprofile from "./pages/MobileEditprofile";
 function App() {
   usePageTracking();
   const location = useLocation();
@@ -113,6 +115,14 @@ function App() {
                 <Route path="/trainer-signup" element={<TrainerSignup />} />
                 <Route path="/institute-signup" element={<InstituteSignup />} />
                 <Route path="/chat/:chatId" element={<ChatBox />} />
+                <Route
+                  path="/MobileCategoriesPage"
+                  element={<MobileCategoriesPage />}
+                />
+                <Route
+                  path="/MobileEditprofile"
+                  element={<MobileEditprofile />}
+                />
                 <Route path="/feedback" element={<Feedback />} />
                 <Route path="/help-center" element={<HelpCenter />} />
 

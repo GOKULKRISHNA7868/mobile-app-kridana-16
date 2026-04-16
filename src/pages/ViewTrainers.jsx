@@ -4,7 +4,7 @@ import { db, auth } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Filter } from "lucide-react";
 /* 🌍 Distance Formula */
 const getDistanceKm = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
@@ -13,8 +13,8 @@ const getDistanceKm = (lat1, lon1, lat2, lon2) => {
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLon / 2) ** 2;
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
@@ -30,7 +30,7 @@ export default function ViewTrainers() {
   const [userLng, setUserLng] = useState(null);
   const [manualLat, setManualLat] = useState("");
   const [manualLng, setManualLng] = useState("");
-
+  const [showFilters, setShowFilters] = useState(false);
   /* 🔹 Filters */
   const searchParams = new URLSearchParams(location.search);
   const defaultCategory = searchParams.get("category") || "";
@@ -416,24 +416,35 @@ export default function ViewTrainers() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-white px-6 md:px-16 py-12">
-      <h1 className="text-4xl font-bold text-[#ff7a00] mb-8">Trainers</h1>
+    <div className="min-h-screen bg-white px-6 md:px-16 py-12">
+      <h1 className="text-4xl font-bold text-[#ff7a00] mb-8 hidden md:block">
+        Trainers
+      </h1>
 
-      {/* FILTERS */}
-      <div className="grid grid-cols-1 md:grid-cols-[repeat(5,minmax(180px,1fr))] gap-3 mb-8">
-        {/* Category */}
+      {/* ================= MOBILE HEADER ================= */}
+      <div className="md:hidden flex justify-between items-center px-4 py-3 border-b bg-white sticky top-0 z-40">
+        <h1 className="text-lg font-bold text-[#ff7a00]">
+          {category || "Trainers"}
+        </h1>
 
-        {/* CATEGORY CUSTOM DROPDOWN */}
+        <button
+          onClick={() => setShowFilters(true)}
+          className="flex items-center gap-2 border px-3 py-1.5 rounded-md text-sm"
+        >
+          <Filter size={16} />
+          Filters
+        </button>
+      </div>
+
+      {/* ================= DESKTOP FILTERS ================= */}
+      <div className="hidden md:grid grid-cols-1 md:grid-cols-[repeat(5,minmax(180px,1fr))] gap-3 mb-8">
+        {/* CATEGORY */}
         <div className="relative">
           <div
             onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-            className={`w-full flex items-center justify-between bg-white 
-    border ${showCategoryDropdown ? "border-orange-500" : "border-gray-300"} 
-    rounded-md px-3 h-[45px] cursor-pointer`}
+            className="w-full flex items-center justify-between bg-white border rounded-md px-3 h-[45px]"
           >
-            <span className={category ? "text-black" : "text-gray-400"}>
-              {category === "" ? "Select Category" : category}
-            </span>
+            <span>{category || "Select Category"}</span>
             <ChevronDown size={18} />
           </div>
 
@@ -456,33 +467,26 @@ export default function ViewTrainers() {
           )}
         </div>
 
-        {/* Subcategory */}
-
-        {/* SUBCATEGORY CUSTOM DROPDOWN */}
+        {/* SUBCATEGORY */}
         <div className="relative">
           <div
             onClick={() =>
               category && setShowSubCategoryDropdown(!showSubCategoryDropdown)
             }
-            className={`w-full flex items-center justify-between bg-white 
-    border ${showSubCategoryDropdown ? "border-orange-500" : "border-gray-300"} 
-    rounded-md px-3 h-[45px] 
-    ${!category && "cursor-not-allowed opacity-50"}`}
+            className="w-full flex items-center justify-between bg-white border rounded-md px-3 h-[45px]"
           >
-            <span className={subCategory ? "text-black" : "text-gray-400"}>
-              {subCategory === "" ? "Select Sub Category" : subCategory}
-            </span>
+            <span>{subCategory || "Select Sub Category"}</span>
             <ChevronDown size={18} />
           </div>
 
           {showSubCategoryDropdown && category && (
             <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow max-h-[180px] overflow-y-auto">
-              {(subCategoryMap[category?.trim()] || []).map((sub) => (
+              {(subCategoryMap[category] || []).map((sub) => (
                 <div
                   key={sub}
                   onClick={() => {
-                    setSubCategory(sub.trim()); // ✅ ONLY THIS
-                    setShowSubCategoryDropdown(false); // close dropdown
+                    setSubCategory(sub);
+                    setShowSubCategoryDropdown(false);
                   }}
                   className="px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer"
                 >
@@ -492,29 +496,22 @@ export default function ViewTrainers() {
             </div>
           )}
         </div>
-        {/* City */}
+
+        {/* CITY */}
         <select
           className="border h-[42px] px-3 rounded-md text-sm bg-white"
           value={city}
           onChange={(e) => setCity(e.target.value)}
         >
           <option value="">All Cities</option>
-          {[
-            ...new Set(
-              trainers
-                .map((t) => t.city?.trim()) // 🔥 REMOVE SPACE
-                .filter(Boolean),
-            ),
-          ]
-            .sort((a, b) => a.localeCompare(b)) // 🔥 ALPHABETICAL ORDER
+          {[...new Set(trainers.map((t) => t.city?.trim()).filter(Boolean))]
+            .sort((a, b) => a.localeCompare(b))
             .map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+              <option key={c}>{c}</option>
             ))}
         </select>
 
-        {/* Min Rating */}
+        {/* RATING */}
         <select
           className="border h-[42px] px-3 rounded-md text-sm bg-white"
           value={minRating}
@@ -525,96 +522,195 @@ export default function ViewTrainers() {
           <option value="4">4★+</option>
         </select>
 
-        {/* Location */}
+        {/* LOCATION */}
         <div className="flex gap-2">
-          <button
-            onClick={getCurrentLocation}
-            className=" text-black h-[40px] px-4 rounded-md text-sm"
-          >
-            Current Location
-          </button>
+          <button onClick={getCurrentLocation}>📍</button>
           <input
             type="number"
             placeholder="Lat"
             value={manualLat}
             onChange={(e) => setManualLat(e.target.value)}
-            className="border h-[40px] px-2 rounded-md w-[70px] text-sm"
+            className="border px-2 rounded-md w-[70px]"
           />
           <input
             type="number"
             placeholder="Lng"
             value={manualLng}
             onChange={(e) => setManualLng(e.target.value)}
-            className="border h-[40px] px-2 rounded-md w-[70px] text-sm"
+            className="border px-2 rounded-md w-[70px]"
           />
         </div>
       </div>
 
-      {/* TRAINER LIST */}
-      {filteredTrainers.length === 0 ? (
-        <div className="text-center mt-19">
-          <img
-            src="/institue.png"
-            alt="No trainers"
-            className="mx-auto w-32 mb-4 opacity-80"
+      {/* ================= MOBILE FILTER SHEET (FIXED) ================= */}
+      {/* ================= MOBILE FILTER POPUP ================= */}
+      {showFilters && (
+        <div className="fixed inset-0 z-50 flex items-end">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowFilters(false)}
           />
+
+          <div className="relative bg-white w-full rounded-t-2xl p-5 max-h-[85vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-[#ff7a00]">
+                Filter Trainers
+              </h2>
+              <button onClick={() => setShowFilters(false)}>Close</button>
+            </div>
+
+            {/* FILTERS */}
+            <div className="flex flex-col gap-4">
+              {/* CATEGORY */}
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  Category
+                </label>
+                <select
+                  className="w-full border rounded-md p-2 mt-1"
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setSubCategory("");
+                  }}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* SUBCATEGORY */}
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  Sub Category
+                </label>
+                <select
+                  className="w-full border rounded-md p-2 mt-1"
+                  value={subCategory}
+                  onChange={(e) => setSubCategory(e.target.value)}
+                  disabled={!category}
+                >
+                  <option value="">All Subcategories</option>
+                  {(subCategoryMap[category] || []).map((sub) => (
+                    <option key={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* CITY */}
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  City
+                </label>
+                <select
+                  className="w-full border rounded-md p-2 mt-1"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                >
+                  <option value="">All Cities</option>
+                  {[
+                    ...new Set(trainers.map((t) => t.city).filter(Boolean)),
+                  ].map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* RATING */}
+              <div>
+                <label className="text-sm font-semibold text-gray-600">
+                  Minimum Rating
+                </label>
+                <select
+                  className="w-full border rounded-md p-2 mt-1"
+                  value={minRating}
+                  onChange={(e) => setMinRating(e.target.value)}
+                >
+                  <option value="">Any Rating</option>
+                  <option value="3">3★ & above</option>
+                  <option value="4">4★ & above</option>
+                </select>
+              </div>
+
+              {/* ACTION BUTTONS */}
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => {
+                    setCategory("");
+                    setSubCategory("");
+                    setCity("");
+                    setMinRating("");
+                  }}
+                  className="flex-1 border rounded-md py-2 font-medium"
+                >
+                  Reset
+                </button>
+
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="flex-1 bg-[#FF6A00] text-white py-2 rounded-md font-bold active:scale-95"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= LIST ================= */}
+      {filteredTrainers.length === 0 ? (
+        <div className="text-center mt-12">
+          <img src="/institue.png" className="mx-auto w-32 mb-4 opacity-80" />
           <h1 className="text-2xl font-bold mb-2">
             Trainers will be available shortly
           </h1>
-          <p className="text-gray-500 text-xl">
-            We're currently updating our trainer listings. Please check back
-            soon!
-          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-20">
+        <div className="md:hidden flex flex-col gap-4 mt-6">
           {filteredTrainers.map((t) => (
             <div
               key={t.id}
-              onClick={() => navigate(`/trainers/${t.id}`)}
-              className="bg-white rounded-[18px] shadow-lg border cursor-pointer hover:scale-[1.02] transition-transform flex flex-col justify-between h-[320px]"
+              className="bg-[#FFF7F2] rounded-xl p-4 shadow-sm border"
             >
-              {/* PROFILE IMAGE */}
-              <div className="h-[160px] rounded-t-[18px] overflow-hidden flex items-center justify-center bg-white">
-                {t.profileImageUrl ? (
-                  <img
-                    src={t.profileImageUrl}
-                    alt={t.trainerName || `${t.firstName} ${t.lastName}`}
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-white" />
-                )}
-              </div>
-
-            <div className="p-4 text-center flex flex-col justify-between h-full">
-               <h2 className="text-xl sm:text-2xl font-bold line-clamp-1 min-h-[28px]">
-                  {t.trainerName || `${t.firstName} ${t.lastName}`}
-                </h2>
-              <p className="text-gray-500 text-sm sm:text-base min-h-[20px]">
-                  {t.city}, {t.state}
-                </p>
-                {t.distance !== undefined && (
-                  <p className="font-semibold mt-1 text-sm sm:text-base min-h-[24px]">
-                    📏 {t.distance.toFixed(2)} km away
-                  </p>
-                )}
-                <p className="font-semibold mt-1 text-sm sm:text-base flex items-center justify-center gap-1 min-h-[24px]">
-                  {t.rating ? (
-                    <>
-                      <span className="text-yellow-500">⭐</span>
-                      {t.rating.toFixed(1)}
-                      {t.ratingCount ? `(${t.ratingCount})` : ""}
-                    </>
+              <div className="flex gap-4 items-center">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-white border">
+                  {t.profileImageUrl ? (
+                    <img
+                      src={t.profileImageUrl}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <>
-                      <span className="text-gray-400">☆</span>
-                      <span className="text-gray-400">No ratings</span>
-                    </>
+                    <div className="w-full h-full bg-gray-200" />
                   )}
-                </p>
-                <button className="mt-auto w-full bg-[#ff7a00] text-white py-2 rounded-lg text-sm">
-                  View Details
+                </div>
+
+                <div className="flex-1">
+                  <h2 className="font-bold text-base">
+                    {t.trainerName || `${t.firstName} ${t.lastName}`}
+                  </h2>
+
+                  <p className="text-sm text-gray-500">
+                    {Object.keys(t.categories || {})[0] || "Trainer"}
+                  </p>
+
+                  <p className="text-xs text-gray-400">
+                    {t.city}, {t.state}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-4">
+                <button className="bg-[#FF6A00] text-white rounded-md py-2 px-4 font-bold flex-1 active:scale-95 transition">
+                  Message
+                </button>
+
+                <button
+                  onClick={() => navigate(`/trainers/${t.id}`)}
+                  className="border-2 border-[#FF6A00] text-[#FF6A00] rounded-md py-2 px-4 font-bold flex-1 bg-white active:scale-95 transition"
+                >
+                  View Profile
                 </button>
               </div>
             </div>

@@ -361,7 +361,7 @@ const InstituteDashboard = () => {
 
   return (
     <div className="h-screen flex flex-col md:flex-row bg-gray-700 overflow-hidden">
-      <div className="md:hidden fixed top-12 left-0 right-0 bg-black z-[60] flex items-center justify-between px-4 py-3">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-black z-[60] flex items-center justify-between px-4 py-3">
         <button
           onClick={() => setSidebarOpen(true)}
           className="text-white text-2xl"

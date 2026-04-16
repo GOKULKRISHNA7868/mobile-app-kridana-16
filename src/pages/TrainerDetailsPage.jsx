@@ -5,28 +5,19 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
-  Phone,
-  Mail,
   MapPin,
   Star,
-  Award,
-  Calendar,
-  Building2,
-  Globe,
   Users,
-  BadgeCheck,
-  GraduationCap,
-  ShieldCheck,
-  CreditCard,
-  Landmark,
-  Briefcase,
-  Image,
-  Video,
+  Calendar,
+  Award,
+  FileText,
+  CheckCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { setDoc, serverTimestamp } from "firebase/firestore";
+import { Phone, Mail, MessageCircle } from "lucide-react";
 const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
+  hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0 },
 };
 
@@ -34,6 +25,7 @@ export default function TrainerDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [trainer, setTrainer] = useState(null);
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     const loadTrainer = async () => {
@@ -43,30 +35,20 @@ export default function TrainerDetailsPage() {
     loadTrainer();
   }, [id]);
 
-  const handleRating = async (star) => {
-    const user = auth.currentUser;
-    if (!user || !trainer) return;
+  if (!trainer) {
+    return (
+      <div className="min-h-screen flex justify-center items-center text-xl font-semibold">
+        Loading Trainer Profile...
+      </div>
+    );
+  }
 
-    const ratings = trainer.ratingsByUser || {};
-    if (ratings[user.uid] !== undefined) return alert("Already rated");
-
-    const count = trainer.ratingCount || 0;
-    const avg = trainer.rating || 0;
-    const newAvg = (avg * count + star) / (count + 1);
-
-    await updateDoc(doc(db, "trainers", id), {
-      rating: newAvg,
-      ratingCount: count + 1,
-      [`ratingsByUser.${user.uid}`]: star,
-    });
-
-    setTrainer((prev) => ({
-      ...prev,
-      rating: newAvg,
-      ratingCount: count + 1,
-      ratingsByUser: { ...ratings, [user.uid]: star },
-    }));
-  };
+  const stats = [
+    { label: "Students", value: trainer.students?.length || 0 },
+    { label: "Achieve", value: trainer.achievements?.length || 0 },
+    { label: "Exp", value: trainer.experience || "0yrs" },
+    { label: "Foll", value: trainer.followers || 0 },
+  ];
   const startTrainerChat = async () => {
     const user = auth.currentUser;
 
@@ -78,10 +60,8 @@ export default function TrainerDetailsPage() {
 
     const chatId = [user.uid, trainer.id].sort().join("_");
 
-    const chatRef = doc(db, "chats", chatId);
-
     await setDoc(
-      chatRef,
+      doc(db, "chats", chatId),
       {
         type: "individual",
         members: [user.uid, trainer.id],
@@ -97,350 +77,237 @@ export default function TrainerDetailsPage() {
       state: {
         chatName:
           trainer.trainerName ||
-          `${trainer.firstName} ${trainer.lastName}` ||
+          `${trainer.firstName || ""} ${trainer.lastName || ""}` ||
           "Trainer",
         chatType: "trainer",
       },
     });
   };
-  if (!trainer) {
-    return (
-      <div className="min-h-screen flex justify-center items-center text-xl font-semibold">
-        Loading Trainer Profile...
-      </div>
-    );
-  }
-
-  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(
-    trainer.fullAddress || `${trainer.latitude},${trainer.longitude}`,
-  )}&output=embed`;
-
   return (
-    <div className="min-h-screen bg-[#fafafa]">
-      {/* ================= HEADER ================= */}
-      <motion.section
-        initial="hidden"
-        animate="visible"
-        variants={fadeUp}
-        transition={{ duration: 0.6 }}
-        className="bg-white px-5 md:px-24 py-10 shadow-sm"
-      >
+    <div className="min-h-screen bg-white">
+      {/* ================= HERO ================= */}
+      <div className="relative w-full h-64 md:h-80">
+        {/* BACK SIDE IMAGE */}
+        <img
+          src={trainer.coverImage || trainer.profileImageUrl}
+          className="w-full h-full object-cover"
+          alt="Cover"
+        />
+
+        {/* Overlay to make white text/buttons pop */}
+        <div className="absolute inset-0 bg-black/30" />
+
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-[#ff7a00] font-semibold mb-6 hover:gap-3 transition-all"
+          className="absolute top-4 left-4 flex items-center gap-2 text-[#FF6A00] font-semibold z-20"
         >
-          <ArrowLeft size={20} /> Back
+          <ArrowLeft size={18} />
+          Back
         </button>
 
-        <div className="flex flex-col md:flex-row gap-10 items-center">
-          <div className="w-52 h-52 rounded-full overflow-hidden border-4 border-orange-400 shadow-lg">
+        {/* OVERLAPPING CARD WITH GLASS EFFECT */}
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+          /* Change: bg-white -> bg-white/70 
+       Change: added backdrop-blur-md 
+       Change: added border for better glass definition 
+    */
+          className="-mt-20 relative z-10 bg-white/70 backdrop-blur-md mx-4 rounded-3xl p-5 shadow-xl border border-white/30"
+        >
+          {/* PROFILE IMAGE SECTION */}
+          <div className="flex flex-col items-center">
             <img
               src={trainer.profileImageUrl}
-              className="w-full h-full object-cover object-center scale-105"
+              /* Increased size slightly and shadow to pop against the glass */
+              className="w-24 h-24 rounded-full object-cover border-4 border-[#FF6A00] -mt-16 shadow-md"
+              alt="Profile"
             />
-          </div>
 
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold text-[#ff7a00]">
+            <h1 className="text-xl font-bold mt-3 text-gray-900 text-center">
               {trainer.trainerName ||
-                `${trainer.firstName} ${trainer.lastName}`}
+                `${trainer.firstName || ""} ${trainer.lastName || ""}`}
             </h1>
 
-            <p className="text-gray-500 mt-1">
-              {trainer.designation || "Trainer"} • {trainer.organization || "—"}
+            <p className="text-gray-600 text-sm font-medium">
+              {trainer.designation || "Cricketer"}
             </p>
-
-            <p className="flex items-center gap-2 text-gray-600 mt-3">
-              <MapPin size={18} />
-              {trainer.fullAddress || trainer.locationName}
-            </p>
-
-            {/* ⭐ Rating */}
-            <div className="flex gap-2 my-4 items-center">
-              {[1, 2, 3, 4, 5].map((s) => {
-                const alreadyRated =
-                  trainer.ratingsByUser?.[auth.currentUser?.uid] !== undefined;
-                return (
-                  <span
-                    key={s}
-                    onClick={() => !alreadyRated && handleRating(s)}
-                    className={`text-3xl ${
-                      trainer.ratingsByUser?.[auth.currentUser?.uid] >= s
-                        ? "text-yellow-400"
-                        : "text-gray-300"
-                    } ${alreadyRated ? "opacity-60" : "cursor-pointer"}`}
-                  >
-                    <Star />
-                  </span>
-                );
-              })}
-              <span className="ml-2 font-semibold">
-                {trainer.rating?.toFixed(1) || "No ratings"} (
-                {trainer.ratingCount || 0})
-              </span>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-              <Stat
-                icon={Users}
-                label="Students"
-                value={trainer.students?.length || 0}
-              />
-              <Stat
-                icon={Calendar}
-                label="Experience"
-                value={trainer.experience || "—"}
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-wrap gap-4 mt-6">
-              {trainer.phoneNumber && (
-                <a href={`tel:${trainer.phoneNumber}`} className="btn-primary">
-                  <img src="/call-icon.png" className="w-4 h-4" alt="call" />
-                  Call
-                </a>
-              )}
-
-              {trainer.email && trainer.email.includes("@") && (
-                <a
-                  href={`https://mail.google.com/mail/?view=cm&fs=1&to=${trainer.email.trim()}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-outline flex items-center gap-2"
-                >
-                  <img src="/email-icon.png" className="w-4 h-4" alt="email" />
-                  Email
-                </a>
-              )}
-
-              <button
-                onClick={startTrainerChat}
-                className="btn-outline flex items-center gap-2"
-              >
-                <img src="/chat-icon.png" className="w-5 h-5" alt="chat" />
-                Chat
-              </button>
-
-              <button
-                onClick={() => navigate(`/book-demo/${trainer.id}`)}
-                className="btn-outline flex items-center gap-2"
-              >
-                <Calendar size={16} className="text-[#ff7a00]" />
-                Book Demo
-              </button>
-            </div>
           </div>
-        </div>
-      </motion.section>
 
-      {/* ================= MAP ================= */}
-      <motion.section
-        variants={fadeUp}
+          {/* ================= STATS CIRCLES ================= */}
+          <div className="grid grid-cols-4 gap-2 text-center mt-6">
+            {stats.map((s, i) => (
+              <div key={i} className="flex flex-col items-center">
+                {/* Circle styling matches your orange brand exactly */}
+                <div className="bg-[#FF6A00] text-white w-14 h-14 flex items-center justify-center rounded-full text-xs font-bold shadow-lg shadow-orange-500/30">
+                  {s.value}
+                </div>
+                <p className="text-[10px] font-bold text-gray-700 mt-2 uppercase tracking-tight">
+                  {s.label}
+                </p>
+              </div>
+            ))}
+          </div>
+          {/* ================= ACTION BUTTONS ================= */}
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            {/* CALL */}
+            {trainer.phoneNumber && (
+              <a
+                href={`tel:${trainer.phoneNumber}`}
+                className="flex items-center justify-center gap-2 bg-[#ff7a00] text-white py-3 rounded-xl font-semibold shadow-md active:scale-95 transition"
+              >
+                <Phone size={16} />
+                Call
+              </a>
+            )}
+
+            {/* EMAIL */}
+            {trainer.email && (
+              <a
+                href={`mailto:${trainer.email}`}
+                className="flex items-center justify-center gap-2 border border-[#ff7a00] text-[#ff7a00] py-3 rounded-xl font-semibold active:scale-95 transition"
+              >
+                <Mail size={16} />
+                Email
+              </a>
+            )}
+
+            {/* CHAT */}
+            <button
+              onClick={startTrainerChat}
+              className="flex items-center justify-center gap-2 border border-[#ff7a00] text-[#ff7a00] py-3 rounded-xl font-semibold active:scale-95 transition"
+            >
+              <MessageCircle size={16} />
+              Chat
+            </button>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* ================= ABOUT ================= */}
+      <motion.div
         initial="hidden"
         whileInView="visible"
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-        className="px-5 md:px-24 py-10"
+        variants={fadeUp}
+        className="px-4 md:px-12 mt-20"
       >
-        <div className="bg-white rounded-2xl overflow-hidden shadow-md">
-          <iframe title="Location" src={mapSrc} className="w-full h-[350px]" />
+        <h2 className="font-bold text-lg mb-2">About</h2>
+        <div className="bg-[#FFF7F2] p-4 rounded-2xl text-gray-700 text-sm">
+          {trainer.about ||
+            "Experienced trainer dedicated to improving student performance with structured training programs."}
         </div>
-      </motion.section>
+      </motion.div>
 
-      {/* ================= INFORMATION GRID ================= */}
-      <SectionBlock title="Trainer Information">
-        <Info
-          icon={Building2}
-          label="Organization"
-          value={trainer.organization}
-        />
-        <Info icon={Briefcase} label="Founder" value={trainer.founderName} />
-        <Info
-          icon={ShieldCheck}
-          label="Facilities"
-          value={trainer.facilitiesInfrastructure}
-        />
-        <Info
-          icon={Calendar}
-          label="Year Founded"
-          value={trainer.yearFounded}
-        />
-        <Info
-          icon={BadgeCheck}
-          label="Trainer Type"
-          value={trainer.trainerType}
-        />
-        <Info
-          icon={GraduationCap}
-          label="Institute"
-          value={trainer.instituteName}
-        />
-      </SectionBlock>
+      {/* ================= DETAILS ================= */}
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        variants={fadeUp}
+        className="px-4 md:px-12 mt-10"
+      >
+        <h2 className="font-bold text-lg mb-4">Details</h2>
 
-      {/* ================= PRICING ================= */}
-      <SectionBlock title="Pricing & Payments">
-        <Info
-          icon={CreditCard}
-          label="Monthly Fees"
-          value={trainer.pricing?.monthlyFees}
-        />
-        <Info
-          icon={CreditCard}
-          label="Registration Fees"
-          value={trainer.pricing?.registrationFees}
-        />
-        <Info
-          icon={CreditCard}
-          label="Uniform Cost"
-          value={trainer.pricing?.uniformCost}
-        />
-        <Info
-          icon={Landmark}
-          label="Payment Methods"
-          value={trainer.pricing?.paymentMethods}
-        />
-      </SectionBlock>
+        <div className="space-y-4">
+          <Detail
+            icon={MapPin}
+            label="Location"
+            value={trainer.locationName || trainer.city}
+          />
+          <Detail
+            icon={FileText}
+            label="License"
+            value={trainer.license || "—"}
+          />
+          <Detail
+            icon={CheckCircle}
+            label="Designation"
+            value={trainer.designation}
+          />
 
-      {/* ================= CATEGORIES ================= */}
-      <motion.section className="px-5 md:px-24 py-14">
-        <h2 className="section-title">Categories & Subcategories</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {trainer.categories &&
-            Object.entries(trainer.categories).map(([cat, subs]) => (
-              <motion.div
-                whileHover={{ scale: 1.03 }}
-                key={cat}
-                className="bg-white rounded-2xl p-6 shadow-sm border"
-              >
-                <h3 className="font-bold text-lg mb-2">{cat}</h3>
-                <ul className="list-disc ml-5 text-gray-700">
-                  {subs.map((s, i) => (
-                    <li key={i}>{s}</li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
+          {/* EXTRA FIELDS */}
+          {showMore && (
+            <>
+              <Detail
+                icon={Award}
+                label="Organization"
+                value={trainer.organization}
+              />
+              <Detail
+                icon={Users}
+                label="Institute"
+                value={trainer.instituteName}
+              />
+              <Detail
+                icon={Calendar}
+                label="Year Experience"
+                value={trainer.yearExperience}
+              />
+              <Detail
+                icon={FileText}
+                label="Category"
+                value={trainer.category}
+              />
+              <Detail
+                icon={FileText}
+                label="Sub Category"
+                value={trainer.subCategory}
+              />
+              <Detail icon={FileText} label="Email" value={trainer.email} />
+              <Detail
+                icon={FileText}
+                label="Phone"
+                value={trainer.phoneNumber}
+              />
+              <Detail icon={FileText} label="State" value={trainer.state} />
+              <Detail icon={FileText} label="City" value={trainer.city} />
+              <Detail icon={FileText} label="Country" value={trainer.country} />
+            </>
+          )}
         </div>
-      </motion.section>
 
-      {/* ================= MEDIA ================= */}
-      <MediaBlock title="Photos" items={trainer.images} type="image" />
-      <MediaBlock title="Awards" items={trainer.awardsImages} type="image" />
-      <MediaBlock
-        title="Media Mentions"
-        items={trainer.mediaMentions}
-        type="image"
-      />
-      <MediaBlock title="Videos" items={trainer.videos} type="video" />
-      <MediaBlock title="Reels" items={trainer.reels} type="reel" />
+        <button
+          onClick={() => setShowMore(!showMore)}
+          className="mt-4 text-[#FF6A00] font-semibold"
+        >
+          {showMore ? "Show Less" : "View More"}
+        </button>
+      </motion.div>
+
+      {/* ================= GALLERY ================= */}
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        variants={fadeUp}
+        className="px-4 md:px-12 mt-10 mb-10"
+      >
+        <h2 className="font-bold text-lg mb-4">Gallery</h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {(trainer.images || trainer.certifications || []).map((img, i) => (
+            <img
+              key={i}
+              src={img}
+              className="rounded-xl w-full h-32 object-cover"
+            />
+          ))}
+        </div>
+      </motion.div>
     </div>
   );
 }
 
-/* ================= COMPONENTS ================= */
-
-const SectionBlock = ({ title, children }) => (
-  <motion.section
-    variants={fadeUp}
-    initial="hidden"
-    whileInView="visible"
-    viewport={{ once: true }}
-    transition={{ duration: 0.6 }}
-    className="px-5 md:px-24 py-14"
-  >
-    <h2 className="section-title">{title}</h2>
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">{children}</div>
-  </motion.section>
-);
-
-const Info = ({ icon: Icon, label, value }) => (
-  <motion.div
-    whileHover={{ scale: 1.02 }}
-    className="bg-white p-5 rounded-2xl shadow-sm border"
-  >
-    <div className="flex items-center gap-2 mb-1">
-      <Icon size={18} className="text-[#ff7a00]" />
-      <p className="text-sm text-gray-500">{label}</p>
-    </div>
-    <p className="font-semibold text-gray-800">{value || "—"}</p>
-  </motion.div>
-);
-
-const Stat = ({ icon: Icon, label, value }) => (
-  <div className="bg-gray-50 p-3 rounded-xl flex gap-3 items-center shadow-sm">
-    <Icon size={18} className="text-[#ff7a00]" />
-    <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="font-bold">{value}</p>
-    </div>
-  </div>
-);
-
-const MediaBlock = ({ title, items, type }) => {
-  if (!items || items.length === 0) return null;
-
+/* ================= DETAIL COMPONENT ================= */
+function Detail({ icon: Icon, label, value }) {
   return (
-    <motion.section
-      variants={fadeUp}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      className="px-5 md:px-24 py-14"
-    >
-      <h2 className="section-title">{title}</h2>
-
-      {type === "image" && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
-          {items.map((img, i) => (
-            <motion.img
-              whileHover={{ scale: 1.05 }}
-              key={i}
-              src={img}
-              className="w-full h-44 object-cover rounded-2xl shadow-md border"
-            />
-          ))}
-        </div>
-      )}
-
-      {type === "video" && (
-        <div className="grid md:grid-cols-2 gap-6">
-          {items.map((vid, i) => (
-            <video
-              key={i}
-              controls
-              className="w-full rounded-2xl shadow-md border"
-            >
-              <source src={vid} type="video/mp4" />
-            </video>
-          ))}
-        </div>
-      )}
-
-      {type === "reel" && (
-        <div className="flex gap-6 overflow-x-auto">
-          {items.map((vid, i) => (
-            <video
-              key={i}
-              controls
-              className="min-w-[260px] h-[420px] rounded-2xl shadow-md border"
-            >
-              <source src={vid} type="video/mp4" />
-            </video>
-          ))}
-        </div>
-      )}
-    </motion.section>
+    <div className="flex items-start gap-3 bg-white p-3 rounded-xl shadow-sm border">
+      <div className="bg-[#FF6A00] p-2 rounded-full text-white">
+        <Icon size={16} />
+      </div>
+      <div>
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="font-semibold text-sm text-gray-800">{value || "—"}</p>
+      </div>
+    </div>
   );
-};
-
-/* ================= UI CLASSES ================= */
-/*
-btn-primary = "flex items-center gap-2 px-5 py-3 rounded-xl bg-[#ff7a00] text-white hover:scale-105 transition font-semibold"
-btn-outline = "flex items-center gap-2 px-5 py-3 rounded-xl border border-[#ff7a00] text-[#ff7a00] hover:bg-[#ff7a00] hover:text-white transition font-semibold"
-btn-outline-dark = "flex items-center gap-2 px-5 py-3 rounded-xl border text-gray-800 bg-white hover:shadow-md transition font-semibold"
-btn-dark = "flex items-center gap-2 px-5 py-3 rounded-xl bg-gray-900 text-white hover:bg-black hover:scale-105 transition font-semibold shadow-md"
-section-title = "text-3xl font-bold text-[#ff7a00] mb-8"
-*/
+}

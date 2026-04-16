@@ -1,19 +1,19 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
-import { sendPasswordResetEmail } from "firebase/auth";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const role = new URLSearchParams(location.search).get("role") || "user";
 
-  const [darkMode, setDarkMode] = useState(false);
   const [formData, setFormData] = useState({ emailPhone: "", password: "" });
-  const [familyStudents, setFamilyStudents] = useState([]);
 
   const handleChange = (e) =>
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
@@ -45,10 +45,8 @@ export default function Login() {
         return;
       }
 
-      // 🔐 PLAN CHECK (trainer / institute only)
       if (actualRole !== "user" && actualRole !== "family") {
-        const planRef = doc(db, "plans", user.uid);
-        const planSnap = await getDoc(planRef);
+        const planSnap = await getDoc(doc(db, "plans", user.uid));
 
         if (!planSnap.exists()) {
           navigate("/plans");
@@ -67,18 +65,18 @@ export default function Login() {
         }
       }
 
-      // ✅ FAMILY LOGIN REDIRECT
       if (actualRole === "family") {
-        navigate("/"); // landing page or main index
+        navigate("/");
         return;
       }
+
       const studentSnap = await getDoc(doc(db, "students", user.uid));
 
       if (studentSnap.exists() && studentSnap.data().defaultPassword) {
-        navigate("/reset-password"); // force reset page
+        navigate("/reset-password");
         return;
       }
-      // ✅ FINAL REDIRECT FOR OTHERS
+
       if (actualRole === "trainer") navigate("/trainers/dashboard");
       else if (actualRole === "institute") navigate("/institutes/dashboard");
       else navigate("/");
@@ -98,77 +96,72 @@ export default function Login() {
     }
   };
 
-  // ✅ Forgot Password Handler
   const handleForgotPassword = async () => {
-    const email = prompt("Enter your registered email to reset password:");
+    const email = prompt("Enter your registered email:");
 
-    if (!email) {
-      alert("Email is required!");
-      return;
-    }
+    if (!email) return alert("Email is required!");
 
     try {
       await sendPasswordResetEmail(auth, email);
-      alert("Password reset link sent successfully to your email!");
+      alert("Reset link sent to your email!");
     } catch (error) {
-      console.error(error);
-
       if (error.code === "auth/user-not-found") {
-        alert("No account found with this email.");
-      } else if (error.code === "auth/invalid-email") {
-        alert("Please enter a valid email address.");
+        alert("No account found.");
       } else {
-        alert("Error: " + error.message);
+        alert(error.message);
       }
     }
   };
 
   return (
     <div
-      className={`min-h-screen flex items-center justify-center p-6 ${darkMode ? "bg-gray-900" : "bg-white"}`}
+      className="min-h-screen flex items-center justify-center px-4 py-8 
+    bg-gradient-to-b from-[#401F00] via-[#FF7A00] to-[#401F00]"
     >
-      <div className="absolute top-6 right-6">
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="px-4 py-2 border border-orange-400 text-orange-500 rounded"
-        >
-          {darkMode ? "Light Mode" : "Dark Mode"}
-        </button>
-      </div>
-
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`w-full max-w-md p-8 rounded-xl shadow-lg ${darkMode ? "bg-gray-800" : "bg-white"}`}
+        className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 sm:p-8"
       >
-        <h2 className="text-3xl font-bold mb-6 text-orange-500">
-          {role === "trainer"
-            ? "Trainer Sign In"
-            : role === "institute"
-              ? "Institute Sign In"
-              : "Welcome Back"}
+        {/* Heading */}
+        <h2 className="text-2xl sm:text-3xl font-bold text-center text-[#2D1400]">
+          Welcome back to Kridana
         </h2>
+        <p className="text-center text-gray-500 mt-2">
+          Login to continue to your profile
+        </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Email / Phone */}
+        {/* Toggle Buttons */}
+        <div className="flex mt-6 rounded-lg overflow-hidden border">
+          <button className="flex-1 py-2 bg-[#FF6A00] text-white font-semibold">
+            Login with Password
+          </button>
+          <button className="flex-1 py-2 bg-white text-[#2D1400] border-l">
+            Login with OTP
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+          {/* Email */}
           <div>
-            <label className="block mb-2 text-orange-500 font-medium">
+            <label className="text-[#FF6A00] font-medium text-sm">
               E-mail / Phone Number*
             </label>
             <input
               type="text"
               name="emailPhone"
-              placeholder="Enter your email or phone number"
+              placeholder="abc123@gmail.com"
               required
               onChange={handleChange}
-              className="w-full p-3 rounded-lg border border-orange-300
-      focus:outline-none focus:border-orange-500"
+              className="w-full mt-1 p-3 border rounded-lg 
+              focus:outline-none focus:border-[#FF6A00]"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block mb-2 text-orange-500 font-medium">
+            <label className="text-[#FF6A00] font-medium text-sm">
               Password*
             </label>
             <input
@@ -177,25 +170,38 @@ export default function Login() {
               placeholder="Enter your password"
               required
               onChange={handleChange}
-              className="w-full p-3 rounded-lg border border-orange-300
-      focus:outline-none focus:border-orange-500"
+              className="w-full mt-1 p-3 border rounded-lg 
+              focus:outline-none focus:border-[#FF6A00]"
             />
-          </div>
-          {/* Forgot Password */}
-          <div className="text-right">
-            <button
-              type="button"
-              onClick={handleForgotPassword}
-              className="text-sm text-orange-500 hover:underline font-medium"
-            >
-              Forgot Password?
-            </button>
+
+            {/* Forgot Password */}
+            <div className="text-right mt-2">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-sm text-[#FF6A00] font-medium"
+              >
+                Forgot password?
+              </button>
+            </div>
           </div>
 
-          <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition">
-            Sign In
+          {/* Login Button */}
+          <button className="w-full bg-[#FF6A00] text-white py-3 rounded-md font-bold">
+            Login
           </button>
         </form>
+
+        {/* Footer */}
+        <p className="text-center text-[#2D1400] mt-6">
+          Don't have an account?{" "}
+          <span
+            onClick={() => navigate("/signup")}
+            className="text-[#FF6A00] font-bold cursor-pointer"
+          >
+            SignUp
+          </span>
+        </p>
       </motion.div>
     </div>
   );

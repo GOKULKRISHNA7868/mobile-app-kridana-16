@@ -5,6 +5,53 @@ import { db } from "../firebase";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  FaFistRaised,
+  FaFootballBall,
+  FaTableTennis,
+  FaDumbbell,
+  FaBullseye,
+  FaHorse,
+  FaMountain,
+  FaSnowflake,
+  FaSwimmer,
+  FaSpa,
+  FaMusic,
+} from "react-icons/fa";
+
+const categories = [
+  { name: "Martial Arts", path: "/services/martial-arts", icon: FaFistRaised },
+  {
+    name: "Team Ball Sports",
+    path: "/services/teamball",
+    icon: FaFootballBall,
+  },
+  {
+    name: "Racket Sports",
+    path: "/services/racketsports",
+    icon: FaTableTennis,
+  },
+  { name: "Fitness", path: "/services/fitness", icon: FaDumbbell },
+  {
+    name: "Target & Precision Sports",
+    path: "/services/target-precision-sports",
+    icon: FaBullseye,
+  },
+  {
+    name: "Equestrian Sports",
+    path: "/services/equestrian-sports",
+    icon: FaHorse,
+  },
+  {
+    name: "Adventure & Outdoor Sports",
+    path: "/services/adventure-outdoor-sports",
+    icon: FaMountain,
+  },
+  { name: "Ice Sports", path: "/services/ice-sports", icon: FaSnowflake },
+  { name: "Aquatic Sports", path: "/services/aquatic", icon: FaSwimmer },
+  { name: "Wellness", path: "/services/wellness", icon: FaSpa },
+  { name: "Dance", path: "/services/dance", icon: FaMusic },
+];
 /* ================= DISTANCE ================= */
 const getDistance = (lat1, lon1, lat2, lon2) => {
   const toRad = (v) => (v * Math.PI) / 180;
@@ -192,15 +239,15 @@ const Landing = () => {
   }, []);
 
   return (
-    <div className="w-full font-sans">
+    <div className="w-full font-sans pb-20 md:pb-0">
       {/* 3px white line */}
-      <div className="w-full h-[5px] bg-white"></div>
+      <div className="w-full h-[6px] bg-white"></div>
 
       {/* ================================================= */}
       {/* ================= HERO SECTION =================== */}
       {/* ================================================= */}
       <section className="w-full bg-white">
-        <div className="relative w-full max-w-[1440px] mx-auto overflow-hidden group h-[220px] sm:h-[300px] md:h-[400px] lg:h-[500px] xl:h-[600px]">
+        <div className="relative w-full max-w-[1440px] mx-auto overflow-hidden group h-[150px] sm:h-[300px] md:h-[400px] lg:h-[500px] xl:h-[600px]">
           {/* SLIDES */}
           {slides.map((img, index) => (
             <img
@@ -252,108 +299,102 @@ const Landing = () => {
           </div>
         </div>
       </section>
+      {/* ================= CATEGORIES ================= */}
+      <section className="px-4 py-6 bg-gray-50">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Categories</h2>
+          <button
+            onClick={() => navigate("/MobileCategoriesPage")}
+            className="text-orange-500 text-sm font-semibold"
+          >
+            See All
+          </button>
+        </div>
 
-      {/* ================================================= */}
-      {/* ================= DOMAINS SECTION ================= */}
-      {/* ================================================= */}
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+          {categories.map((cat, index) => {
+            const Icon = cat.icon;
 
-      {/* ================================================= */}
-      {/* ================= DOMAINS SECTION ================= */}
-      {/* ================================================= */}
+            return (
+              <div
+                key={index}
+                onClick={() => {
+                  navigate(cat.path);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="min-w-[90px] flex-shrink-0 flex flex-col items-center cursor-pointer"
+              >
+                <div className="w-14 h-14 rounded-full border border-gray-300 flex items-center justify-center bg-white shadow-sm">
+                  <Icon className="text-gray-700 text-lg" />
+                </div>
 
-      <section className="px-6 md:px-20 py-16 bg-white">
-        <h2 className="text-3xl md:text-4xl font-bold mb-10">Categories</h2>
+                <p className="text-[11px] text-orange-500 text-center mt-2 font-medium">
+                  {cat.name}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {[
-            {
-              name: "Martial Arts",
-              image: "/images/karate.jpeg",
-              route: "/services/martial-arts",
-            },
-            {
-              name: "Adventure & Outdoor Sports",
-              image: "/images//bungee-jumping.jpeg",
-              route: "/services/adventure-outdoor-sports",
-            },
-            {
-              name: "Team Ball Sports",
-              image: "/images/team-ball-sports.jpg",
-              route: "/services/teamball",
-            },
-            {
-              name: "Fitness",
-              image: "/images/fitness.jpg",
-              route: "/services/fitness",
-            },
-            {
-              name: "Wellness",
-              image: "/images/traditional-therapies.jpeg",
-              route: "/services/wellness",
-            },
-            {
-              name: "Target & Precision Sports",
-              image: "/images/archery.jpeg",
-              route: "/services/target-precision-sports",
-            },
-            {
-              name: "Ice Sports",
-              image: "/images/ice-sports.jpg",
-              route: "/services/ice-sports",
-            },
-            {
-              name: "Aquatic Sports",
-              image: "/images/swimming.jpeg",
-              route: "/services/aquatic",
-            },
-            {
-              name: "Dance",
-              image: "/images/dance.jpg",
-              route: "/services/dance",
-            },
-            {
-              name: "Racket Sports",
-              image: "/images/racket-sports.jpg",
-              route: "/services/racketsports",
-            },
-            {
-              name: "Equestrian Sports",
-              image: "/images/equestrian-sports.jpg",
-              route: "/services/equestrian-sports",
-            },
-          ].map((domain) => (
-            <motion.div
-              key={domain.name}
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => {
-                navigate(domain.route);
-                window.scrollTo(0, 0);
-              }}
-              className="bg-white rounded-2xl border border-orange-200 overflow-hidden cursor-pointer
-                   transition-all duration-300
-                   hover:-translate-y-2
-                   hover:shadow-[0_12px_35px_rgba(249,115,22,0.35)]"
+      {/* ================= SUGGESTED ================= */}
+      <section className="px-4 py-6 bg-gray-50">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Suggested</h2>
+          <button className="text-orange-500 text-sm font-semibold">
+            See All
+          </button>
+        </div>
+
+        {/* HORIZONTAL SCROLL WRAPPER */}
+        <div className="flex gap-4 overflow-x-auto scrollbar-hide">
+          {[1, 2, 3, 4, 5].map((item) => (
+            <div
+              key={item}
+              className="min-w-[260px] bg-white rounded-xl shadow-sm border"
             >
-              {/* IMAGE */}
-              <div className="h-48 overflow-hidden">
-                <img
-                  src={domain.image}
-                  alt={domain.name}
-                  className="w-full h-full object-cover"
-                />
+              {/* USER HEADER */}
+              <div className="flex items-center justify-between p-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gray-300"></div>
+                  <div>
+                    <p className="text-sm font-semibold">Sridhar Rao</p>
+                    <p className="text-xs text-gray-500">Martial Arts</p>
+                  </div>
+                </div>
+
+                <button className="text-xs bg-orange-500 text-white px-3 py-1 rounded-full">
+                  Follow
+                </button>
               </div>
 
-              {/* TITLE */}
-              <div className="p-5 text-center">
-                <h3 className="text-orange-600 font-bold text-lg">
-                  {domain.name}
-                </h3>
+              {/* IMAGE */}
+              <div className="w-full h-52 bg-gray-200"></div>
+
+              {/* ACTIONS */}
+              <div className="flex gap-4 px-3 py-2 text-gray-400 text-lg">
+                👍 👎 💬
               </div>
-            </motion.div>
+
+              {/* CAPTION */}
+              <div className="flex items-start gap-2 px-3 pb-3">
+                <div className="w-6 h-6 rounded-full bg-gray-300"></div>
+                <p className="text-xs text-gray-700">
+                  Honoring excellence in training and discipline...
+                </p>
+              </div>
+            </div>
           ))}
         </div>
       </section>
+
+      {/* ================================================= */}
+      {/* ================= DOMAINS SECTION ================= */}
+      {/* ================================================= */}
+
+      {/* ================================================= */}
+      {/* ================= DOMAINS SECTION ================= */}
+      {/* ================================================= */}
 
       {/* ================= ADS SECTION ================= */}
 
