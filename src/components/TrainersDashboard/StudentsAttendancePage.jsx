@@ -413,12 +413,13 @@ const StudentsAttendancePage = () => {
     setShowExportModal(false);
   };
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-white min-h-screen max-w-7xl mx-auto">
+    <div className="w-full min-h-screen bg-white p-3 sm:p-4 pb-10">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-3xl font-bold text-orange-500 flex items-center gap-2">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold text-[#FF6A00]">
           Trainer Students Attendance
         </h1>
+
         <input
           type="date"
           value={selectedDate}
@@ -428,242 +429,252 @@ const StudentsAttendancePage = () => {
             setDraftAttendance({});
             setSelectedDate(e.target.value);
           }}
-          className="border bg-orange-500 border-orange-300 rounded-lg px-3 py-2"
+          className="border border-orange-300 rounded-lg px-2 py-1 text-sm"
         />
       </div>
 
       {/* SUMMARY */}
-      <div className="bg-white border border-orange-200 rounded-xl p-4 flex flex-col lg:flex-row justify-between gap-4 mb-6">
-        <div>
-          <p className="text-gray-600">Total Students</p>
-          <h2 className="text-xl font-bold text-orange-500">
-            {summary.totalStudents}
-          </h2>
-        </div>
-
-        <div>
-          <p className="text-gray-600">Present Today</p>
-          <h2 className="text-xl font-bold text-orange-500">
-            {summary.presentToday}
-          </h2>
-        </div>
-
-        <div>
-          <p className="text-gray-600">Absent Today</p>
-          <h2 className="text-xl font-bold text-orange-500">
-            {summary.absentToday}
-          </h2>
-        </div>
+      <div className="flex gap-3 overflow-x-auto mb-4">
+        {[
+          { label: "Total", value: summary.totalStudents },
+          { label: "Present", value: summary.presentToday },
+          { label: "Absent", value: summary.absentToday },
+        ].map((item, i) => (
+          <div key={i} className="min-w-[120px] bg-orange-100 rounded-xl p-3">
+            <div className="text-xs text-gray-600">{item.label}</div>
+            <div className="text-lg font-bold text-[#FF6A00]">{item.value}</div>
+          </div>
+        ))}
       </div>
 
-      {/* TOOLBAR */}
-      <div className="bg-white border border-orange-200 rounded-xl p-5 mb-6">
-        {/* 🔹 ROW 1: TITLE + SEARCH + EXPORT */}
-        <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
-          {/* LEFT */}
-          <div className="text-lg font-bold text-black">Attendance Records</div>
+      {/* SEARCH + EXPORT */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center flex-grow border rounded-full px-3 py-2">
+          <Search size={16} />
+          <input
+            className="ml-2 w-full outline-none text-sm"
+            placeholder="Search student..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-          {/* RIGHT */}
-          <div className="flex items-center gap-3">
-            {/* SEARCH */}
-            <div className="flex items-center border border-orange-400 rounded-lg px-3 py-2">
-              <Search size={18} className="text-gray-500" />
-              <input
-                placeholder="Search Name"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="outline-none ml-2 w-40"
-              />
+        <button
+          onClick={() => setShowExportModal(true)}
+          className="p-2 border rounded-full"
+        >
+          <Download size={18} />
+        </button>
+      </div>
+
+      {/* FILTERS */}
+      <div className="flex gap-2 overflow-x-auto mb-4">
+        <select
+          value={selectedSession}
+          onChange={(e) => setSelectedSession(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm min-w-[120px]"
+        >
+          <option value="">Session</option>
+          {SESSIONS.map((s) => (
+            <option key={s}>{s}</option>
+          ))}
+        </select>
+
+        {/* TIME */}
+        <div className="relative min-w-[140px]">
+          <button
+            onClick={() => setShowTimeDropdown(!showTimeDropdown)}
+            className="w-full border rounded-lg px-3 py-2 text-sm flex justify-between items-center"
+          >
+            {selectedTime
+              ? TIME_SLOTS.find((t) => t.value === selectedTime)?.label
+              : "Time"}
+            <ChevronDown size={16} />
+          </button>
+
+          {showTimeDropdown && (
+            <div className="absolute z-50 bg-white border rounded-lg mt-1 w-full max-h-40 overflow-y-auto">
+              {TIME_SLOTS.map((t) => (
+                <div
+                  key={t.value}
+                  onClick={() => {
+                    setSelectedTime(t.value);
+                    setShowTimeDropdown(false);
+                  }}
+                  className="px-3 py-2 hover:bg-orange-100 cursor-pointer"
+                >
+                  {t.label}
+                </div>
+              ))}
             </div>
-
-            {/* EXPORT */}
-            <button
-              onClick={() => setShowExportModal(true)}
-              className="border border-orange-400 text-gray-700 px-5 py-2 rounded-lg flex items-center gap-2 hover:bg-orange-50"
-            >
-              <Download size={18} />
-              Export
-            </button>
-          </div>
+          )}
         </div>
 
-        {/* 🔹 ROW 2: FILTERS */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* SESSION */}
-          <select
-            value={selectedSession}
-            onChange={(e) => setSelectedSession(e.target.value)}
-            className="bg-white border border-orange-300 rounded-lg px-4 py-2 font-semibold"
-          >
-            <option value="">Session</option>
-            {SESSIONS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+        <select
+          value={selectedCategory}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            setSelectedSubCategory("");
+          }}
+          className="border rounded-lg px-3 py-2 text-sm min-w-[140px]"
+        >
+          <option value="">Category</option>
+          {categories.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
 
-          {/* TIME */}
-          <div ref={timeRef} className="relative w-44">
-            <button
-              onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-              className="w-full border border-orange-300 bg-white rounded-lg px-4 py-2 font-semibold flex items-center justify-between"
+        <select
+          value={selectedSubCategory}
+          onChange={(e) => setSelectedSubCategory(e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm min-w-[140px]"
+        >
+          <option value="">Sub</option>
+          {subCategories.map((s) => (
+            <option key={s}>{s}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* ================= MOBILE VIEW ================= */}
+      <div className="block sm:hidden space-y-3 pb-28">
+        {paginatedStudents.map((s, index) => {
+          const record = draftAttendance[s.uid];
+
+          return (
+            <div
+              key={s.uid}
+              className="bg-white border rounded-xl p-4 shadow-sm"
             >
-              <span>
-                {selectedTime
-                  ? TIME_SLOTS.find((t) => t.value === selectedTime)?.label
-                  : "Timings"}
-              </span>
-              <ChevronDown size={18} />
-            </button>
-
-            {showTimeDropdown && (
-              <div className="absolute z-50 mt-1 w-full bg-white border rounded-lg shadow-md max-h-40 overflow-y-auto">
-                {TIME_SLOTS.map((t) => (
-                  <div
-                    key={t.value}
-                    onClick={() => {
-                      setSelectedTime(t.value);
-                      setShowTimeDropdown(false);
-                    }}
-                    className="px-4 py-2 hover:bg-orange-100 cursor-pointer"
-                  >
-                    {t.label}
-                  </div>
-                ))}
+              <div className="flex justify-between mb-3">
+                <div className="font-semibold text-gray-800">
+                  {(currentPage - 1) * itemsPerPage + index + 1}. {s.firstName}{" "}
+                  {s.lastName}
+                </div>
+                <div className="text-xs text-gray-500">{s.sessions || "-"}</div>
               </div>
-            )}
-          </div>
 
-          {/* CATEGORY */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              setSelectedSubCategory("");
-            }}
-            className="bg-white border border-orange-300 rounded-lg px-4 py-2 font-semibold"
-          >
-            <option value="">Category</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+              <div className="flex justify-between">
+                <div
+                  onClick={() => saveAttendance(s, "present")}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <div className="w-6 h-6 border rounded-full flex items-center justify-center">
+                    {record === "present" && (
+                      <div className="w-3 h-3 bg-green-500 rounded-full" />
+                    )}
+                  </div>
+                  <span className="text-green-600">P</span>
+                </div>
 
-          {/* SUB CATEGORY */}
-          <select
-            value={selectedSubCategory}
-            onChange={(e) => setSelectedSubCategory(e.target.value)}
-            className="bg-white border border-orange-300 rounded-lg px-4 py-2 font-semibold"
+                <div
+                  onClick={() => saveAttendance(s, "absent")}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <div className="w-6 h-6 border rounded-full flex items-center justify-center">
+                    {record === "absent" && (
+                      <div className="w-3 h-3 bg-red-500 rounded-full" />
+                    )}
+                  </div>
+                  <span className="text-red-500">A</span>
+                </div>
+              </div>
+
+              {record === "absent" && (
+                <select
+                  value={absenceReasons[s.uid] || ""}
+                  onChange={(e) =>
+                    setAbsenceReasons((prev) => ({
+                      ...prev,
+                      [s.uid]: e.target.value,
+                    }))
+                  }
+                  className="mt-3 w-full border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="">Select reason</option>
+                  {ABSENCE_OPTIONS.map((r) => (
+                    <option key={r}>{r}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          );
+        })}
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={handleSaveAll}
+            disabled={!hasChanges}
+            className={`px-6 py-2 text-sm font-semibold rounded-lg text-white ${
+              hasChanges ? "bg-[#FF6A00]" : "bg-gray-300"
+            }`}
           >
-            <option value="">Sub Category</option>
-            {subCategories.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            Save
+          </button>
         </div>
       </div>
 
-      {/* TABLE */}
-      {/* TABLE */}
-      <div className="border border-orange-300 rounded-xl overflow-x-auto">
-        {/* HEADER */}
+      {/* ================= DESKTOP VIEW ================= */}
+      <div className="hidden sm:block border rounded-xl overflow-x-auto">
         <div className="grid grid-cols-5 min-w-[700px] bg-[#1F2937] text-orange-400 font-semibold p-4">
-          <div>Students Name</div>
+          <div>Name</div>
           <div>Session</div>
           <div className="text-center">Present</div>
           <div className="text-center">Absent</div>
           <div className="text-center">Reason</div>
         </div>
 
-        {/* ROWS */}
-        <div className="bg-white min-h-[500px]">
-          {paginatedStudents.map((s, index) => {
-            const record = draftAttendance[s.uid];
+        {paginatedStudents.map((s, index) => {
+          const record = draftAttendance[s.uid];
 
-            return (
-              <div
-                key={s.uid}
-                className="grid grid-cols-5 min-w-[700px] px-6 py-4 border-t items-center"
-              >
-                {/* NAME */}
-                <div className="flex items-center gap-2">
-                  <span>{(currentPage - 1) * itemsPerPage + index + 1}.</span>
-                  {s.firstName} {s.lastName}
-                </div>
-
-                {/* SESSION */}
-                <div>{s.sessions || "-"}</div>
-
-                {/* PRESENT */}
-                <div className="flex justify-center">
-                  <input
-                    type="checkbox"
-                    checked={record === "present"}
-                    onChange={() => saveAttendance(s, "present")}
-                    className="w-5 h-5"
-                  />
-                </div>
-
-                {/* ABSENT */}
-                <div className="flex justify-center">
-                  <input
-                    type="checkbox"
-                    checked={record === "absent"}
-                    onChange={() => saveAttendance(s, "absent")}
-                    className="w-5 h-5"
-                  />
-                </div>
-
-                {/* REASON */}
-                <div>
-                  {record === "absent" && (
-                    <select
-                      value={absenceReasons[s.uid] || ""}
-                      onChange={(e) =>
-                        setAbsenceReasons((prev) => ({
-                          ...prev,
-                          [s.uid]: e.target.value,
-                        }))
-                      }
-                      className="border rounded px-2 py-1 w-full"
-                    >
-                      <option value="">Select</option>
-                      {ABSENCE_OPTIONS.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
+          return (
+            <div
+              key={s.uid}
+              className="grid grid-cols-5 min-w-[700px] px-6 py-4 border-t items-center"
+            >
+              <div>
+                {(currentPage - 1) * itemsPerPage + index + 1}. {s.firstName}{" "}
+                {s.lastName}
               </div>
-            );
-          })}
-        </div>
-      </div>
+              <div>{s.sessions || "-"}</div>
 
-      <div className="flex flex-col sm:flex-row justify-end gap-4 mt-6">
-        <button
-          onClick={handleCancel}
-          className="border border-gray-400 px-5 py-2 rounded-md"
-        >
-          Cancel
-        </button>
+              <div className="flex justify-center">
+                <input
+                  type="checkbox"
+                  checked={record === "present"}
+                  onChange={() => saveAttendance(s, "present")}
+                />
+              </div>
 
-        <button
-          onClick={handleSaveAll}
-          disabled={!hasChanges}
-          className={`px-5 py-2 rounded-md text-white ${
-            hasChanges ? "bg-orange-500" : "bg-gray-400 cursor-not-allowed"
-          }`}
-        >
-          Save
-        </button>
+              <div className="flex justify-center">
+                <input
+                  type="checkbox"
+                  checked={record === "absent"}
+                  onChange={() => saveAttendance(s, "absent")}
+                />
+              </div>
+
+              <div>
+                {record === "absent" && (
+                  <select
+                    value={absenceReasons[s.uid] || ""}
+                    onChange={(e) =>
+                      setAbsenceReasons((prev) => ({
+                        ...prev,
+                        [s.uid]: e.target.value,
+                      }))
+                    }
+                    className="border rounded px-2 py-1 w-full"
+                  >
+                    <option value="">Select</option>
+                    {ABSENCE_OPTIONS.map((r) => (
+                      <option key={r}>{r}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       <Pagination
@@ -671,49 +682,6 @@ const StudentsAttendancePage = () => {
         totalPages={totalPages}
         onPageChange={setCurrentPage}
       />
-      {showExportModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-[350px] space-y-4">
-            <h2 className="text-lg font-semibold">Export Attendance</h2>
-
-            <div>
-              <label className="text-sm font-medium">From Date</label>
-              <input
-                type="date"
-                value={exportFromDate}
-                onChange={(e) => setExportFromDate(e.target.value)}
-                className="w-full border border-orange-300 rounded-lg px-3 py-2 mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">To Date</label>
-              <input
-                type="date"
-                value={exportToDate}
-                onChange={(e) => setExportToDate(e.target.value)}
-                className="w-full border border-orange-300 rounded-lg px-3 py-2 mt-1"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowExportModal(false)}
-                className="border px-4 py-1 rounded"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={exportAttendanceRange}
-                className="bg-orange-500 text-white px-4 py-1 rounded"
-              >
-                Download
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -1,7 +1,20 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
-
+import {
+  Circle,
+  Volleyball,
+  Footprints,
+  Trophy,
+  Target,
+  Flag,
+  Users,
+  Activity,
+  Dribbble,
+  Shield,
+  Zap,
+  Gamepad2,
+} from "lucide-react";
 const TeamBallPage = () => {
   const navigate = useNavigate();
   const category = "Team Ball Sports";
@@ -11,25 +24,32 @@ const TeamBallPage = () => {
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const categories = [
-    { name: "Football / Soccer", image: "/images/football.jpg" },
-    { name: "Basketball", image: "/images/basketball.jpg" },
-    { name: "Handball", image: "/images/handball.jpg" },
-    { name: "Rugby", image: "/images/rugby.jpg" },
-    { name: "Futsal", image: "/images/futsal.jpg" },
-    { name: "Field Hockey", image: "/images/field-hockey.jpg" },
-    { name: "Lacrosse", image: "/images/lacrosse.jpg" },
-    { name: "Gaelic Football", image: "/images/gaelic-football.jpg" },
-    { name: "Volleyball", image: "/images/volleyball.jpg" },
-    { name: "Beach Volleyball", image: "/images/beach-volleyball.jpg" },
-    { name: "Sepak Takraw", image: "/images/sepak-takraw.jpg" },
-    { name: "Roundnet (Spikeball)", image: "/images/roundnet-spikeball.jpg" },
-    { name: "Netball", image: "/images/netball.jpg" },
-    { name: "Cricket", image: "/images/cricket.jpg" },
-    { name: "Baseball", image: "/images/baseball.jpg" },
-    { name: "Softball", image: "/images/softball.jpg" },
-    { name: "Wheelchair Rugby", image: "/images/wheelchair-rugby.jpg" },
-    { name: "Dodgeball", image: "/images/dodgeball.jpg" },
-    { name: "Korfball", image: "/images/korfball.jpg" },
+    { name: "Football / Soccer", icon: Footprints },
+    { name: "Basketball", icon: Dribbble },
+    { name: "Handball", icon: Circle },
+    { name: "Rugby", icon: Shield },
+    { name: "Futsal", icon: Footprints },
+
+    { name: "Field Hockey", icon: Target },
+    { name: "Lacrosse", icon: Target },
+
+    { name: "Gaelic Football", icon: Footprints },
+
+    { name: "Volleyball", icon: Volleyball },
+    { name: "Beach Volleyball", icon: Volleyball },
+
+    { name: "Sepak Takraw", icon: Circle },
+    { name: "Roundnet (Spikeball)", icon: Circle },
+
+    { name: "Netball", icon: Circle },
+
+    { name: "Cricket", icon: Trophy },
+    { name: "Baseball", icon: Circle },
+    { name: "Softball", icon: Circle },
+
+    { name: "Wheelchair Rugby", icon: Shield },
+    { name: "Dodgeball", icon: Circle },
+    { name: "Korfball", icon: Users },
   ];
 
   const filteredCategories = categories.filter((item) =>
@@ -74,24 +94,13 @@ const TeamBallPage = () => {
               setSelectedSubCategory(item.name);
               setShowChoice(true);
             }}
-            className="relative rounded-2xl overflow-hidden h-40 cursor-pointer"
+            className="h-[120px] rounded-2xl bg-white shadow-md flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-lg transition"
           >
-            {/* IMAGE */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
+            <item.icon size={26} className="text-[#FF6A00]" />
 
-            {/* OVERLAY */}
-            <div className="absolute inset-0 bg-black/30" />
-
-            {/* TEXT */}
-            <div className="absolute top-3 left-0 right-0 text-center">
-              <span className="text-orange-400 font-bold text-base">
-                {item.name}
-              </span>
-            </div>
+            <p className="mt-2 text-xs text-gray-700 text-center px-1 font-medium">
+              {item.name}
+            </p>
           </div>
         ))}
       </div>

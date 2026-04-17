@@ -17,7 +17,7 @@ import FeePaymentSuccess from "./pages/FeePaymentSuccess";
 import InstFeePaymentSuccess from "./pages/InstFeePaymentSuccess";
 /* ================= NAVBAR ================= */
 import Navbar from "./components/Navbar.jsx";
-import Footer from "./components/Footer";
+//import Footer from "./components/Footer";
 import About from "./pages/About.jsx";
 import Career from "./pages/Career.jsx";
 import Contact from "./pages/Contact.jsx";
@@ -77,6 +77,9 @@ import Feedback from "./pages/Feedback";
 import HelpCenter from "./pages/HelpCenter.jsx";
 import MobileCategoriesPage from "./pages/MobileCategoriesPage";
 import MobileEditprofile from "./pages/MobileEditprofile";
+import PendingFeesDetails from "./components/InstituteDashboard/PendingFeesDetails";
+import StudentsAttendancePage from "./components/InstituteDashboard/StudentsAttendancePage";
+import TrainerStudentsPage from "./components/TrainersDashboard/TrainerStudentsPage";
 function App() {
   usePageTracking();
   const location = useLocation();
@@ -87,6 +90,7 @@ function App() {
     "/signup",
     "/trainer-signup",
     "/institute-signup",
+    "/reels/:index",
   ];
   const hideFooterPaths = [
     "/RoleSelection", // Welcome to Kridana page
@@ -123,9 +127,20 @@ function App() {
                   path="/MobileEditprofile"
                   element={<MobileEditprofile />}
                 />
+                <Route
+                  path="/StudentsAttendancePage"
+                  element={<StudentsAttendancePage />}
+                />
+                <Route
+                  path="/TrainerStudentsPage"
+                  element={<TrainerStudentsPage />}
+                />
                 <Route path="/feedback" element={<Feedback />} />
                 <Route path="/help-center" element={<HelpCenter />} />
-
+                <Route
+                  path="/pending-fees/:branch"
+                  element={<PendingFeesDetails />}
+                />
                 {/* LANDING */}
                 <Route path="/RoleSelection" element={<RoleSelection />} />
                 <Route path="/reels/:index" element={<ReelViewer />} />
@@ -241,7 +256,6 @@ function App() {
                   element={<AvailableDemoClasses />}
                 />
               </Routes>
-              {showFooter && <Footer />}
             </div>
           </WishlistProvider>
         </CartProvider>

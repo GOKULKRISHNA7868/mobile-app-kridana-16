@@ -26,12 +26,12 @@ const categories = [
   { name: "Equestrian Sports", icon: Activity, path: "equestrian-sports" },
   { name: "Wellness", icon: Flower2, path: "wellness" },
   { name: "Team Ball Sports", icon: Trophy, path: "teamball" },
-  { name: "Cycling", icon: Bike, path: "cycling" },
+
   { name: "Ice Sports", icon: Snowflake, path: "ice-sports" },
   { name: "Racket Sports", icon: Dribbble, path: "racketsports" },
   { name: "Target & Precision", icon: Target, path: "target-precision-sports" },
   { name: "Fitness", icon: Dumbbell, path: "fitness" },
-  { name: "Physical Sports", icon: Activity, path: "physical-sports" },
+  { name: "AquaticSports", icon: Activity, path: "aquatic" },
 ];
 
 const CategoriesPage = () => {

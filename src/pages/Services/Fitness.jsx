@@ -1,44 +1,72 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, User } from "lucide-react";
+import {
+  Search,
+  User,
+  ArrowLeft,
+  Dumbbell,
+  Activity,
+  Flame,
+  Timer,
+  Repeat,
+  HeartPulse,
+  StretchHorizontal,
+  Bike,
+  CircleDot,
+} from "lucide-react";
 
 const Fitness = () => {
   const navigate = useNavigate();
+
   const [selectedSubCategory, setSelectedSubCategory] = React.useState(null);
   const [showChoice, setShowChoice] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const category = "Fitness";
 
+  /* Swipe Back */
+  const touchStartX = React.useRef(0);
+  const touchEndX = React.useRef(0);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.changedTouches[0].screenX;
+  };
+
+  const handleTouchEnd = (e) => {
+    touchEndX.current = e.changedTouches[0].screenX;
+
+    const diff = touchEndX.current - touchStartX.current;
+
+    if (touchStartX.current < 60 && diff > 90) {
+      navigate(-1);
+    }
+  };
+
   const categories = [
-    { name: "Gym Workout", image: "/images/gym-workout.jpeg" },
-    { name: "Weight Training", image: "/images/weight-training.jpeg" },
-    { name: "Bodybuilding", image: "/images/bodybuilding.jpeg" },
-    { name: "Powerlifting", image: "/images/powerlifting.jpeg" },
-    { name: "CrossFit", image: "/images/crossfit.jpeg" },
-    { name: "Calisthenics", image: "/images/calisthenics.jpeg" },
-    { name: "Circuit Training", image: "/images/circuit-training.jpeg" },
-    {
-      name: "HIIT (High-Intensity Interval Training)",
-      image: "/images/hiit-high-intensity-interval-training.jpeg",
-    },
-    { name: "Functional Training", image: "/images/functional-training.jpeg" },
-    { name: "Core Training", image: "/images/core-training.jpeg" },
-    { name: "Mobility Training", image: "/images/mobility-training.jpeg" },
-    { name: "Stretching", image: "/images/stretching.jpeg" },
-    {
-      name: "Resistance Band Training",
-      image: "/images/resistance-band-training.jpeg",
-    },
-    { name: "Kettlebell Training", image: "/images/kettlebell-training.jpeg" },
-    { name: "Boot Camp Training", image: "/images/boot-camp-training.jpeg" },
-    {
-      name: "Spinning (Indoor Cycling)",
-      image: "/images/spinning-indoor-cycling.jpeg",
-    },
-    { name: "Step Fitness", image: "/images/step-fitness.jpeg" },
-    { name: "Pilates", image: "/images/pilates.jpeg" },
-    { name: "Yoga", image: "/images/yoga.jpeg" },
+    { name: "Gym Workout", icon: Dumbbell },
+    { name: "Weight Training", icon: Dumbbell },
+    { name: "Bodybuilding", icon: Dumbbell },
+    { name: "Powerlifting", icon: Dumbbell },
+
+    { name: "CrossFit", icon: Flame },
+    { name: "Calisthenics", icon: Activity },
+    { name: "Circuit Training", icon: Repeat },
+    { name: "HIIT (High-Intensity Interval Training)", icon: Timer },
+
+    { name: "Functional Training", icon: Activity },
+    { name: "Core Training", icon: CircleDot },
+    { name: "Mobility Training", icon: Activity },
+    { name: "Stretching", icon: StretchHorizontal },
+
+    { name: "Resistance Band Training", icon: Repeat },
+    { name: "Kettlebell Training", icon: Dumbbell },
+    { name: "Boot Camp Training", icon: Flame },
+
+    { name: "Spinning (Indoor Cycling)", icon: Bike },
+    { name: "Step Fitness", icon: Activity },
+
+    { name: "Pilates", icon: HeartPulse },
+    { name: "Yoga", icon: HeartPulse },
   ];
 
   const filteredCategories = categories.filter((item) =>
@@ -46,39 +74,51 @@ const Fitness = () => {
   );
 
   return (
-    <div className="bg-[#FFF9F5] min-h-screen font-sans px-4 py-6">
-      {/* HEADER */}
-      <div className="mb-6">
+    <div
+      className="bg-[#FFF9F5] min-h-screen px-4 py-5"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* TOP BAR */}
+      <div className="flex items-center gap-3 mb-5">
+        {/* Back */}
         <button
-          onClick={() => navigate("/categories")}
-          className="text-orange-500 text-sm mb-3"
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-full bg-white shadow flex items-center justify-center active:scale-95"
         >
-          ← Back
+          <ArrowLeft size={20} />
         </button>
 
-        <h1 className="text-2xl font-extrabold">Explore Subcategories</h1>
+        {/* Search */}
+        <div className="flex-1 flex items-center bg-white border border-gray-200 rounded-full px-4 py-2">
+          <Search size={18} className="text-gray-400 mr-2" />
+          <input
+            type="text"
+            placeholder="Search fitness..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full outline-none text-sm bg-transparent"
+          />
+        </div>
 
-        {/* SEARCH + PROFILE */}
-        <div className="flex items-center gap-3 mt-4">
-          <div className="flex-grow flex items-center bg-white border border-gray-200 rounded-full px-4 py-2">
-            <Search size={16} className="text-gray-400 mr-2" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full outline-none bg-transparent text-sm"
-            />
-          </div>
-
-          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-            <User size={18} className="text-gray-500" />
-          </div>
+        {/* Profile */}
+        <div className="w-10 h-10 rounded-full bg-[#FF6A00] text-white flex items-center justify-center">
+          <User size={18} />
         </div>
       </div>
 
-      {/* GRID */}
-      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {/* Title */}
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        Explore Subcategories
+      </h1>
+
+      {/* Count */}
+      <p className="text-sm text-gray-500 mb-5">
+        {filteredCategories.length} Subcategories
+      </p>
+
+      {/* Grid */}
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-8">
         {filteredCategories.map((item) => (
           <div
             key={item.name}
@@ -86,35 +126,24 @@ const Fitness = () => {
               setSelectedSubCategory(item.name);
               setShowChoice(true);
             }}
-            className="relative rounded-2xl overflow-hidden cursor-pointer aspect-[3/4]"
+            className="h-[120px] rounded-2xl bg-white shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-md transition active:scale-95"
           >
-            {/* IMAGE */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
+            <item.icon size={28} className="text-[#FF6A00]" />
 
-            {/* DARK OVERLAY */}
-            <div className="absolute inset-0 bg-black/30"></div>
-
-            {/* TEXT */}
-            <div className="absolute top-3 left-0 right-0 text-center px-1">
-              <span className="text-orange-400 font-bold text-xs sm:text-sm">
-                {item.name}
-              </span>
-            </div>
+            <p className="text-xs text-gray-700 text-center px-1 font-medium leading-tight">
+              {item.name}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* POPUP */}
+      {/* Modal */}
       {showChoice && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white w-full max-w-md rounded-xl p-6 text-center">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 text-center animate-in fade-in zoom-in duration-200">
             <h2 className="text-lg font-bold mb-2">{category}</h2>
 
-            <p className="text-gray-500 mb-6 text-sm">
+            <p className="text-gray-500 mb-5 text-sm">
               What are you looking for?
             </p>
 
@@ -126,9 +155,8 @@ const Fitness = () => {
                       selectedSubCategory,
                     )}`,
                   );
-                  setShowChoice(false);
                 }}
-                className="bg-orange-500 text-white py-3 rounded-md font-semibold"
+                className="bg-[#FF6A00] text-white py-3 rounded-xl font-semibold"
               >
                 Find Trainers
               </button>
@@ -140,9 +168,8 @@ const Fitness = () => {
                       selectedSubCategory,
                     )}`,
                   );
-                  setShowChoice(false);
                 }}
-                className="border border-orange-500 text-orange-500 py-3 rounded-md font-semibold"
+                className="border border-[#FF6A00] text-[#FF6A00] py-3 rounded-xl font-semibold"
               >
                 Find Institutes
               </button>
@@ -150,7 +177,7 @@ const Fitness = () => {
 
             <button
               onClick={() => setShowChoice(false)}
-              className="mt-4 text-xs text-gray-400"
+              className="mt-4 text-sm text-gray-500 font-medium"
             >
               Cancel
             </button>

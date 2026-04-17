@@ -11,6 +11,7 @@ import {
   updateDoc,
   setDoc,
   serverTimestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -34,7 +35,7 @@ export default function InstituteDetailsPage() {
   const [inst, setInst] = useState(null);
   const [feedbacks, setFeedbacks] = useState([]);
   const [showMore, setShowMore] = useState(false);
-
+  const [followersCount, setFollowersCount] = useState(0);
   /* ================= LOAD INSTITUTE ================= */
   useEffect(() => {
     const load = async () => {
@@ -56,7 +57,81 @@ export default function InstituteDetailsPage() {
     };
     loadFeedbacks();
   }, [id]);
+  useEffect(() => {
+    if (!id) return;
 
+    const q = query(collection(db, "followers"), where("profileId", "==", id));
+
+    const unsub = onSnapshot(q, (snap) => {
+      setFollowersCount(snap.size);
+    });
+
+    return () => unsub();
+  }, [id]);
+  const handleRating = async (star) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
+    if (!inst) return;
+
+    const userId = user.uid;
+    const alreadyRated = inst.ratingsByUser?.[userId];
+
+    // ✅ Already rated once
+    if (alreadyRated) {
+      alert("You already submitted your rating.");
+      return;
+    }
+
+    try {
+      const docRef = doc(db, "institutes", id);
+      const snap = await getDoc(docRef);
+
+      if (!snap.exists()) return;
+
+      const data = snap.data();
+
+      const currentRatings = data.ratingsByUser || {};
+
+      // ✅ Double check from Firebase
+      if (currentRatings[userId]) {
+        alert("You already submitted your rating.");
+        return;
+      }
+
+      const currentCount = data.ratingCount || 0;
+      const currentAvg = data.rating || 0;
+
+      const newCount = currentCount + 1;
+      const newAvg = (currentAvg * currentCount + star) / newCount;
+
+      await updateDoc(docRef, {
+        rating: Number(newAvg.toFixed(1)),
+        ratingCount: newCount,
+        [`ratingsByUser.${userId}`]: star,
+      });
+
+      // ✅ Update UI instantly
+      setInst((prev) => ({
+        ...prev,
+        rating: Number(newAvg.toFixed(1)),
+        ratingCount: newCount,
+        ratingsByUser: {
+          ...(prev.ratingsByUser || {}),
+          [userId]: star,
+        },
+      }));
+
+      alert("Thank you for your feedback!");
+    } catch (error) {
+      console.error(error);
+      alert("Rating failed");
+    }
+  };
   if (!inst) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
@@ -131,9 +206,10 @@ export default function InstituteDetailsPage() {
           </div>
 
           {/* ================= STATS ================= */}
-          <div className="grid grid-cols-4 gap-2 mt-5 text-center">
+          <div className="grid grid-cols-5 gap-2 mt-5 text-center">
             <Stat label="Students" value={inst.customers?.length || 0} />
             <Stat label="Trainers" value={inst.trainers?.length || 0} />
+            <Stat label="Followers" value={followersCount} />
             <Stat label="Rating" value={inst.rating?.toFixed(1) || "0"} />
             <Stat label="Year" value={inst.yearFounded || "-"} />
           </div>
@@ -155,7 +231,63 @@ export default function InstituteDetailsPage() {
         </motion.div>
       </div>
 
-      {/* ================= ABOUT ================= */}
+      {/* ================= ABOUT =================
+      {/* ================= ACTIONS + RATING COMBINED ================= */}
+<div className="mt-5 space-y-4">
+  {/* ACTION BUTTONS */}
+  <div className="grid grid-cols-3 gap-2">
+    <a href={`tel:${inst.phoneNumber}`} className="btn">
+      Call
+    </a>
+
+    <a href={`mailto:${inst.email}`} className="btn-outline">
+      Email
+    </a>
+
+    <button onClick={startChat} className="btn-outline">
+      Chat
+    </button>
+  </div>
+
+  {/* SIMPLE PROFESSIONAL RATING */}
+  <div className="text-center">
+    <p className="text-sm font-semibold text-gray-700 mb-2">
+      Rate this Institute
+    </p>
+
+    <div className="flex justify-center gap-1">
+      {[1, 2, 3, 4, 5].map((s) => {
+        const userRating =
+          inst.ratingsByUser?.[auth.currentUser?.uid] || 0;
+
+        return (
+          <span
+            key={s}
+            onClick={() => handleRating(s)}
+            className={`text-2xl cursor-pointer transition duration-200 ${
+              userRating >= s
+                ? "text-yellow-400"
+                : "text-gray-300 hover:text-yellow-300"
+            }`}
+          >
+            ★
+          </span>
+        );
+      })}
+    </div>
+
+    <p className="text-xs text-gray-500 mt-2">
+      {inst.rating?.toFixed(1) || "0.0"} ⭐ •{" "}
+      {inst.ratingCount || 0} Reviews
+    </p>
+
+    {inst.ratingsByUser?.[auth.currentUser?.uid] && (
+      <p className="text-green-600 text-xs mt-1 font-medium">
+        Thank you for your feedback
+      </p>
+    )}
+  </div>
+</div> */}
       <Section title="About Institute">
         <p className="bg-[#FFF7F2] p-4 rounded-2xl text-gray-700">
           {inst.description || "No description available"}

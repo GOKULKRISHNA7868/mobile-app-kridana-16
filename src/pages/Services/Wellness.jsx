@@ -1,6 +1,16 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
+import {
+  Brain,
+  Apple,
+  Leaf,
+  Flower2,
+  Sparkles,
+  Dumbbell,
+  Smile,
+  Shield,
+} from "lucide-react";
 
 const Wellness = () => {
   const navigate = useNavigate();
@@ -11,32 +21,65 @@ const Wellness = () => {
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const categories = [
-    { name: "Yoga & Meditation", image: "/images/yoga-meditation.jpeg" },
-    { name: "Spa & Relaxation", image: "/images/spa-relaxation.jpeg" },
-    { name: "Mental Wellness", image: "/images/mental-wellness.jpeg" },
-    { name: "Fitness", image: "/images/fitness.jpg" },
-    { name: "Nutrition", image: "/images/nutrition.jpeg" },
-    {
-      name: "Traditional & Alternative Therapies",
-      image: "/images/traditional-therapies.jpeg",
-    },
-    { name: "Rehabilitation", image: "/images/rehabilitation.jpeg" },
-    { name: "Lifestyle Coaching", image: "/images/lifestyle-coaching.jpeg" },
+    { name: "Yoga & Meditation", icon: Flower2 },
+    { name: "Spa & Relaxation", icon: Sparkles },
+    { name: "Mental Wellness", icon: Brain },
+    { name: "Fitness", icon: Dumbbell },
+    { name: "Nutrition", icon: Apple },
+    { name: "Traditional & Alternative Therapies", icon: Leaf },
+    { name: "Rehabilitation", icon: Shield },
+    { name: "Lifestyle Coaching", icon: Smile },
   ];
 
   const filteredCategories = categories.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  /* Swipe Back */
+  useEffect(() => {
+    let startX = 0;
+    let endX = 0;
+
+    const handleTouchStart = (e) => {
+      startX = e.changedTouches[0].screenX;
+    };
+
+    const handleTouchEnd = (e) => {
+      endX = e.changedTouches[0].screenX;
+
+      if (endX - startX > 100) {
+        navigate(-1);
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-[#FFF9F5] px-4 py-6">
       {/* HEADER */}
-      <h1 className="text-2xl font-bold mb-4">Explore Subcategories</h1>
+      <div className="flex items-center gap-3 mb-5">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center active:scale-95"
+        >
+          <ArrowLeft size={20} />
+        </button>
+
+        <h1 className="text-2xl font-bold">Explore Subcategories</h1>
+      </div>
 
       {/* SEARCH */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex items-center flex-grow bg-white border border-gray-200 rounded-full px-4 py-2">
           <Search size={18} className="text-gray-400 mr-2" />
+
           <input
             type="text"
             placeholder="Search disciplines..."
@@ -46,7 +89,6 @@ const Wellness = () => {
           />
         </div>
 
-        {/* PROFILE ICON */}
         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
           👤
         </div>
@@ -66,24 +108,13 @@ const Wellness = () => {
               setSelectedSubCategory(item.name);
               setShowChoice(true);
             }}
-            className="relative rounded-2xl overflow-hidden h-40 cursor-pointer"
+            className="h-[120px] rounded-2xl bg-white shadow-md flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-lg transition active:scale-95"
           >
-            {/* IMAGE */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
+            <item.icon size={26} className="text-[#FF6A00]" />
 
-            {/* OVERLAY */}
-            <div className="absolute inset-0 bg-black/30" />
-
-            {/* TEXT */}
-            <div className="absolute top-3 left-0 right-0 text-center px-1">
-              <span className="text-orange-400 font-bold text-sm leading-tight">
-                {item.name}
-              </span>
-            </div>
+            <p className="text-xs text-gray-700 text-center px-1 font-medium">
+              {item.name}
+            </p>
           </div>
         ))}
       </div>
@@ -91,8 +122,9 @@ const Wellness = () => {
       {/* POPUP */}
       {showChoice && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white w-full max-w-md rounded-xl p-6 text-center">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 text-center">
             <h2 className="text-xl font-bold mb-2">{category}</h2>
+
             <p className="text-gray-600 mb-6">What are you looking for?</p>
 
             <div className="flex flex-col gap-3">
@@ -105,7 +137,7 @@ const Wellness = () => {
                   );
                   setShowChoice(false);
                 }}
-                className="bg-[#FF6A00] text-white py-3 rounded-md font-semibold active:scale-95"
+                className="bg-[#FF6A00] text-white py-3 rounded-xl font-semibold"
               >
                 Find Trainers
               </button>
@@ -119,7 +151,7 @@ const Wellness = () => {
                   );
                   setShowChoice(false);
                 }}
-                className="border border-[#FF6A00] text-[#FF6A00] py-3 rounded-md font-semibold active:scale-95"
+                className="border border-[#FF6A00] text-[#FF6A00] py-3 rounded-xl font-semibold"
               >
                 Find Institutes
               </button>

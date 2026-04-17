@@ -444,13 +444,6 @@ const Navbar = () => {
                     </button>
 
                     <button
-                      onClick={() => navigate("/report")}
-                      className="menu-item"
-                    >
-                      Report
-                    </button>
-
-                    <button
                       onClick={() => navigate("/MobileEditprofile")}
                       className="menu-item"
                     >
@@ -477,7 +470,18 @@ const Navbar = () => {
                     >
                       Privacy Policy
                     </button>
-
+                    <button
+                      onClick={() => navigate("/help-center")}
+                      className="menu-item"
+                    >
+                      Help Center
+                    </button>
+                    <button
+                      onClick={() => navigate("/about")}
+                      className="menu-item"
+                    >
+                      About
+                    </button>
                     <button
                       onClick={handleLogout}
                       className="menu-item text-red-600"

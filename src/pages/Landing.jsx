@@ -693,37 +693,43 @@ const Landing = () => {
         </div>
       </section>
       {/* ================= FULLSCREEN REEL VIEWER ================= */}
-      <section className="py-14 px-6 md:px-16 bg-gray-50">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-semibold">
+      <section className="py-10 sm:py-12 md:py-14 px-4 sm:px-6 md:px-12 lg:px-16 bg-gray-50 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
             Trending Reels & Training Videos 🎥
           </h2>
         </div>
 
-        <div className="flex gap-6 overflow-x-auto scrollbar-hide">
+        {/* Reels Row */}
+        <div className="flex gap-4 sm:gap-5 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
           {reels.slice(0, 3).map((r, index) => (
             <motion.div
               key={r.reelId}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 navigate(`/reels/${index}`, {
-                  state: {
-                    reels: reels, // ✅ send full list
-                  },
+                  state: { reels },
                 });
               }}
-              className="min-w-[230px] h-[420px] rounded-3xl overflow-hidden shadow-xl cursor-pointer bg-black relative"
+              className="snap-start shrink-0 w-[78vw] xs:w-[72vw] sm:w-[320px] md:w-[340px] lg:w-[360px] rounded-3xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-100"
             >
-              <video
-                src={r.videoUrl}
-                className="w-full h-full object-cover"
-                muted
-              />
+              {/* Video */}
+              <div className="relative h-[420px] sm:h-[460px] md:h-[500px] bg-black">
+                <video
+                  src={r.videoUrl}
+                  className="w-full h-full object-cover"
+                  muted
+                  playsInline
+                />
 
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                <p className="text-white font-semibold text-sm">
-                  {r.title || "Training Reel"}
-                </p>
+                {/* Overlay */}
+                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/85 via-black/40 to-transparent">
+                  <p className="text-white font-semibold text-sm sm:text-base line-clamp-2">
+                    {r.title || "Training Reel"}
+                  </p>
+                </div>
               </div>
             </motion.div>
           ))}

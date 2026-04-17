@@ -28,7 +28,9 @@ import MyAccountPage from "./MyAccountPage";
 import { db } from "../../firebase";
 import ResetPassword from "./ResetPassword";
 import PaidRecipet from "./PaidRecipet";
+import Dashboard from "./Dashboard";
 import KYC from "./KYC";
+
 import {
   collection,
   query,
@@ -61,8 +63,8 @@ import { i } from "framer-motion/client";
 const TrainersDashboard = () => {
   const navigate = useNavigate();
   const notificationRef = useRef(null);
-  const [activeMenu, setActiveMenu] = useState("Home");
-  const [view, setView] = useState("trainersData");
+  const [activeMenu, setActiveMenu] = useState("Dashboard");
+  const [view, setView] = useState("Dashboard");
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [trainers, setTrainers] = useState([]);
   const [trainerType, setTrainerType] = useState("Trainer"); // NEW
@@ -118,7 +120,7 @@ const TrainersDashboard = () => {
     {
       title: "Main",
       icon: "dashboard",
-      items: [{ label: "Dashboard", value: "Home" }],
+      items: [{ label: "Dashboard", value: "Dashboard" }],
     },
     {
       title: "Customers",
@@ -157,6 +159,7 @@ const TrainersDashboard = () => {
         },
         { label: "My Account", value: "My Account" },
         { label: "Complete KYC", value: "Complete KYC" },
+
         { label: "Payment & Subscription", value: "Payment & Subscription" },
       ],
     },
@@ -352,6 +355,7 @@ const TrainersDashboard = () => {
 
     if (item === "My Account") return setView("myAccount");
     if (item === "Complete KYC") return setView("KYC");
+    if (item === "Dashboard") return setView("Dashboard");
     if (item === "Customer & Management Settings")
       return setView("CustomerManagementSettings");
     //if (item === "Family Details") return setView("Family");
@@ -419,6 +423,7 @@ const TrainersDashboard = () => {
     if (view === "analytics") return <Reelsdata />;
     if (view === "myAccount") return <TrainerMyAccountLayout />;
     if (view === "KYC") return <KYC />;
+    if (view === "Dashboard") return <Dashboard />;
     if (view === "chatBox") return <ChatBox />;
     if (view === "timetable") return <Timetable />;
     if (view === "events")
@@ -479,7 +484,7 @@ const TrainersDashboard = () => {
   return (
     <div className="h-screen flex bg-gray-700 overflow-hidden relative">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-12 left-0 right-0  z-[60] flex items-center justify-between px-4 py-3 shadow-md">
+      <div className="lg:hidden fixed top-0 left-0 right-0  z-[60] flex items-center justify-between px-4 py-3 shadow-md">
         <button
           onClick={() => setSidebarOpen(true)}
           className="text-white text-2xl"
@@ -494,10 +499,11 @@ const TrainersDashboard = () => {
       <aside
         className={`
     fixed lg:static top-0 left-0 h-full w-72 sm:w-80 bg-gray-900 p-4 overflow-y-auto
-    transform transition-transform duration-300 z-[55] shadow-xl
+    transform transition-transform duration-300 z-[100] shadow-xl
     ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
     lg:translate-x-0
   `}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="lg:hidden flex justify-end mb-4">
           <button

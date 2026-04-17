@@ -1,7 +1,16 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, User } from "lucide-react";
-
+import {
+  Table,
+  Circle,
+  Target,
+  Zap,
+  Activity,
+  Layers,
+  CircleDot,
+  Move,
+} from "lucide-react";
 const Racket = () => {
   const navigate = useNavigate();
   const category = "Racket Sports";
@@ -10,35 +19,27 @@ const Racket = () => {
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const categories = [
-    { name: "Tennis", image: "/images/tennis.jpeg" },
-    { name: "Table Tennis", image: "/images/table-tennis.jpeg" },
-    { name: "Badminton", image: "/images/badminton.jpeg" },
-    { name: "Squash", image: "/images/squash.jpeg" },
-    { name: "Racquetball", image: "/images/racquetball.jpeg" },
-    { name: "Padel", image: "/images/padel.jpeg" },
-    { name: "Pickleball", image: "/images/pickleball.jpeg" },
-    { name: "Platform Tennis", image: "/images/platform-tennis.jpeg" },
-    { name: "Real Tennis", image: "/images/real-tennis.jpeg" },
-    { name: "Soft Tennis", image: "/images/soft-tennis.jpeg" },
-    { name: "Frontenis", image: "/images/frontenis.jpeg" },
-    {
-      name: "Speedminton (Crossminton)",
-      image: "/images/speedminton-crossminton.jpeg",
-    },
-    {
-      name: "Paddle Tennis (POP Tennis)",
-      image: "/images/paddle-tennis-pop-tennis.jpeg",
-    },
-    { name: "Speed-ball", image: "/images/speed-ball.jpeg" },
-    { name: "Chaza", image: "/images/chaza.jpeg" },
-    {
-      name: "Totem Tennis (Swingball)",
-      image: "/images/totem-tennis-swingball.jpeg",
-    },
-    { name: "Matkot", image: "/images/matkot.jpeg" },
-    { name: "Jombola", image: "/images/jombola.jpeg" },
-  ];
+    { name: "Tennis", icon: Circle },
+    { name: "Table Tennis", icon: Table },
+    { name: "Badminton", icon: Activity },
+    { name: "Squash", icon: Move },
+    { name: "Racquetball", icon: Target },
+    { name: "Padel", icon: Circle },
+    { name: "Pickleball", icon: Circle },
+    { name: "Platform Tennis", icon: Layers },
+    { name: "Real Tennis", icon: CircleDot },
+    { name: "Soft Tennis", icon: Circle },
 
+    { name: "Frontenis", icon: Target },
+    { name: "Speedminton (Crossminton)", icon: Zap },
+    { name: "Paddle Tennis (POP Tennis)", icon: Circle },
+    { name: "Speed-ball", icon: Zap },
+    { name: "Chaza", icon: Activity },
+
+    { name: "Totem Tennis (Swingball)", icon: Move },
+    { name: "Matkot", icon: Activity },
+    { name: "Jombola", icon: Circle },
+  ];
   const filteredCategories = categories.filter((item) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -75,24 +76,13 @@ const Racket = () => {
               setSelectedSubCategory(item.name);
               setShowChoice(true);
             }}
-            className="relative rounded-2xl overflow-hidden cursor-pointer h-44"
+            className="h-[120px] rounded-2xl bg-white shadow-md flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-lg transition"
           >
-            {/* IMAGE */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
+            <item.icon size={26} className="text-[#FF6A00]" />
 
-            {/* OVERLAY */}
-            <div className="absolute inset-0 bg-black/30"></div>
-
-            {/* TEXT */}
-            <div className="absolute top-3 left-0 right-0 text-center px-1">
-              <span className="text-orange-500 font-bold text-xs sm:text-sm leading-tight">
-                {item.name}
-              </span>
-            </div>
+            <p className="mt-2 text-xs text-gray-700 text-center px-1 font-medium">
+              {item.name}
+            </p>
           </div>
         ))}
       </div>

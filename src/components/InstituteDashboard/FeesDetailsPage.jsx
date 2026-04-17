@@ -337,6 +337,20 @@ const FeesDetailsPage = () => {
 
     return { total, paid, pending, paidDate, reason: "" };
   };
+
+  const StatCard = ({ title, value }) => (
+    <div className="bg-[#FF6A00] text-white rounded-2xl p-4 sm:p-5 min-h-[10px] flex flex-col justify-between shadow-sm hover:shadow-md transition-all duration-200">
+      {/* Title */}
+      <h3 className="text-[11px] sm:text-sm md:text-base font-medium text-white/90 leading-snug break-words">
+        {title}
+      </h3>
+
+      {/* Value */}
+      <p className="text-lg sm:text-2xl md:text-3xl font-bold mt-3 break-words leading-tight">
+        {value}
+      </p>
+    </div>
+  );
   return (
     <div className="p-4 sm:p-6 lg:p-8 bg-[#f3f4f6] min-h-screen max-w-7xl mx-auto">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
@@ -443,7 +457,7 @@ const FeesDetailsPage = () => {
       </div>
 
       {/* STATS CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <StatCard title="Total Fees Amount" value={`₹ ${totalAmount}`} />
         <StatCard title="Total Fees Pending" value={`₹ ${totalPending}`} />
         <StatCard title="Total Fees Paid" value={`₹ ${totalPaid}`} />

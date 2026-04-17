@@ -1,6 +1,20 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import {
+  Search,
+  ArrowLeft,
+  Mountain,
+  Map,
+  Bike,
+  Compass,
+  Flag,
+  Cloud,
+  Wind,
+  Snowflake,
+  Zap,
+  Circle,
+  ArrowDown,
+} from "lucide-react";
 
 const Adventure = () => {
   const navigate = useNavigate();
@@ -9,33 +23,49 @@ const Adventure = () => {
   const [showChoice, setShowChoice] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
 
+  /* swipe back support */
+  const touchStartX = React.useRef(0);
+  const touchEndX = React.useRef(0);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.changedTouches[0].screenX;
+  };
+
+  const handleTouchEnd = (e) => {
+    touchEndX.current = e.changedTouches[0].screenX;
+
+    const diff = touchEndX.current - touchStartX.current;
+
+    /* swipe right = go back */
+    if (touchStartX.current < 60 && diff > 90) {
+      navigate(-1);
+    }
+  };
+
   const categories = [
-    { name: "Rock Climbing", image: "/images/rock-climbing.jpeg" },
-    { name: "Mountaineering", image: "/images/mountaineering.jpeg" },
-    { name: "Trekking", image: "/images/trekking.jpeg" },
-    { name: "Hiking", image: "/images/hiking.jpeg" },
-    { name: "Mountain Biking", image: "/images/mountain-biking.jpeg" },
-    { name: "Sandboarding", image: "/images/sandboarding.jpeg" },
-    { name: "Orienteering", image: "/images/orienteering.jpeg" },
-    {
-      name: "Obstacle Course Racing",
-      image: "/images/obstacle-course-racing.jpeg",
-    },
-    { name: "Skydiving", image: "/images/skydiving.jpeg" },
-    { name: "Paragliding", image: "/images/paragliding.jpeg" },
-    { name: "Hang Gliding", image: "/images/hang-gliding.jpeg" },
-    { name: "Parachuting", image: "/images/parachuting.jpeg" },
-    { name: "Hot-air Ballooning", image: "/images/hot-air-ballooning.jpeg" },
-    { name: "Skiing", image: "/images/skiing.jpeg" },
-    { name: "Snowboarding", image: "/images/snowboarding.jpeg" },
-    { name: "Ice Climbing", image: "/images/ice-climbing.jpeg" },
-    { name: "Heli-skiing", image: "/images/heli-skiing.jpeg" },
-    { name: "Bungee Jumping", image: "/images/bungee-jumping.jpeg" },
-    { name: "BASE Jumping", image: "/images/base-jumping.jpeg" },
-    { name: "Canyoning", image: "/images/canyoning.jpeg" },
-    { name: "Kite Buggy", image: "/images/kite-buggy.jpeg" },
-    { name: "Zorbing", image: "/images/zorbing.jpeg" },
-    { name: "Zip Lining", image: "/images/zip-lining.jpeg" },
+    { name: "Rock Climbing", icon: Mountain },
+    { name: "Mountaineering", icon: Mountain },
+    { name: "Trekking", icon: Map },
+    { name: "Hiking", icon: Map },
+    { name: "Mountain Biking", icon: Bike },
+    { name: "Sandboarding", icon: Snowflake },
+    { name: "Orienteering", icon: Compass },
+    { name: "Obstacle Course Racing", icon: Flag },
+    { name: "Skydiving", icon: Cloud },
+    { name: "Paragliding", icon: Wind },
+    { name: "Hang Gliding", icon: Wind },
+    { name: "Parachuting", icon: Cloud },
+    { name: "Hot-air Ballooning", icon: Cloud },
+    { name: "Skiing", icon: Snowflake },
+    { name: "Snowboarding", icon: Snowflake },
+    { name: "Ice Climbing", icon: Mountain },
+    { name: "Heli-skiing", icon: Wind },
+    { name: "Bungee Jumping", icon: ArrowDown },
+    { name: "BASE Jumping", icon: ArrowDown },
+    { name: "Canyoning", icon: Mountain },
+    { name: "Kite Buggy", icon: Wind },
+    { name: "Zorbing", icon: Circle },
+    { name: "Zip Lining", icon: Zap },
   ];
 
   const filteredCategories = categories.filter((item) =>
@@ -43,13 +73,23 @@ const Adventure = () => {
   );
 
   return (
-    <div className="bg-[#FFF9F5] min-h-screen px-4 py-6">
-      {/* HEADER */}
-      <h1 className="text-2xl font-bold mb-4">Explore Subcategories</h1>
+    <div
+      className="bg-[#FFF9F5] min-h-screen px-4 py-5"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* TOP BAR */}
+      <div className="flex items-center gap-3 mb-5">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-full bg-white shadow flex items-center justify-center active:scale-95"
+        >
+          <ArrowLeft size={20} />
+        </button>
 
-      {/* SEARCH + PROFILE */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex-grow bg-white border border-gray-200 rounded-full px-4 py-2 flex items-center">
+        {/* Search */}
+        <div className="flex-1 bg-white border border-gray-200 rounded-full px-4 py-2 flex items-center">
           <Search size={18} className="text-gray-400 mr-2" />
           <input
             type="text"
@@ -60,19 +100,24 @@ const Adventure = () => {
           />
         </div>
 
-        {/* PROFILE ICON */}
-        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+        {/* Profile */}
+        <div className="w-10 h-10 rounded-full bg-[#FF6A00] text-white flex items-center justify-center font-bold">
           👤
         </div>
       </div>
 
+      {/* TITLE */}
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        Explore Subcategories
+      </h1>
+
       {/* COUNT */}
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-gray-500 mb-5">
         {filteredCategories.length} Subcategories
       </p>
 
       {/* GRID */}
-      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-8">
         {filteredCategories.map((item) => (
           <div
             key={item.name}
@@ -80,24 +125,13 @@ const Adventure = () => {
               setSelectedSubCategory(item.name);
               setShowChoice(true);
             }}
-            className="relative h-[160px] rounded-2xl overflow-hidden cursor-pointer"
+            className="h-[110px] bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition active:scale-95"
           >
-            {/* IMAGE */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
+            <item.icon size={28} className="text-[#FF6A00]" />
 
-            {/* DARK OVERLAY */}
-            <div className="absolute inset-0 bg-black/30"></div>
-
-            {/* TEXT */}
-            <div className="absolute top-3 left-0 right-0 text-center">
-              <span className="text-orange-400 font-bold text-sm">
-                {item.name}
-              </span>
-            </div>
+            <p className="mt-2 text-xs text-gray-700 text-center px-1 font-medium leading-tight">
+              {item.name}
+            </p>
           </div>
         ))}
       </div>
@@ -105,14 +139,12 @@ const Adventure = () => {
       {/* MODAL */}
       {showChoice && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white w-full max-w-md rounded-xl p-6 text-center">
-            <h2 className="text-lg font-bold text-center mb-2">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 text-center animate-in fade-in zoom-in duration-200">
+            <h2 className="text-lg font-bold mb-2">
               Adventure & Outdoor Sports
             </h2>
 
-            <p className="text-center text-gray-500 mb-4">
-              What are you looking for?
-            </p>
+            <p className="text-gray-500 mb-5">What are you looking for?</p>
 
             <div className="flex flex-col gap-3">
               <button
@@ -122,9 +154,8 @@ const Adventure = () => {
                       selectedSubCategory,
                     )}`,
                   );
-                  setShowChoice(false);
                 }}
-                className="bg-[#FF6A00] text-white py-3 rounded-md font-semibold"
+                className="bg-[#FF6A00] text-white py-3 rounded-xl font-semibold"
               >
                 Find Trainers
               </button>
@@ -136,9 +167,8 @@ const Adventure = () => {
                       selectedSubCategory,
                     )}`,
                   );
-                  setShowChoice(false);
                 }}
-                className="border border-[#FF6A00] text-[#FF6A00] py-3 rounded-md font-semibold"
+                className="border border-[#FF6A00] text-[#FF6A00] py-3 rounded-xl font-semibold"
               >
                 Find Institutes
               </button>
@@ -146,7 +176,7 @@ const Adventure = () => {
 
             <button
               onClick={() => setShowChoice(false)}
-              className="mt-4 text-sm text-gray-500 w-full"
+              className="mt-4 text-sm text-gray-500 font-medium"
             >
               Cancel
             </button>

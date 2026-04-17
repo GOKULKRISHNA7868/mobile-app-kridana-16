@@ -1,10 +1,21 @@
-// Full professional Instagram-style Reel system with swipe, like, save, view count, share, animations, Firebase secure logic
-// React + Firebase (Firestore)
-// File: src/pages/ReelViewer.jsx
+// Mobile-first Instagram/TikTok style Reel Viewer
+// Replace full ReelViewer.jsx with this code
 
 import React, { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  UserPlus,
+  UserCheck,
+  Eye,
+  ArrowLeft,
+  ThumbsDown,
+} from "lucide-react";
+
 import { db, auth } from "../firebase";
 import {
   collection,
@@ -20,12 +31,12 @@ import {
   addDoc,
   deleteDoc,
 } from "firebase/firestore";
-import { useLocation } from "react-router-dom";
+
 const ReelViewer = () => {
   const { index } = useParams();
   const navigate = useNavigate();
-
   const location = useLocation();
+
   const [reels, setReels] = useState(location.state?.reels || []);
   const [activeIndex, setActiveIndex] = useState(Number(index) || 0);
   const [loading, setLoading] = useState(true);
@@ -33,152 +44,155 @@ const ReelViewer = () => {
   const [likes, setLikes] = useState(0);
   const [views, setViews] = useState(0);
   const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
+
+  const [dislikes, setDislikes] = useState(0);
+  const [disliked, setDisliked] = useState(false);
 
   const [comments, setComments] = useState([]);
-  const [commentText, setCommentText] = useState("");
   const [showComments, setShowComments] = useState(false);
-  const [dislikes, setDislikes] = useState(0); // 🔽 DISLIKE
-  const [disliked, setDisliked] = useState(false); // 🔽 DISLIKE
+  const [commentText, setCommentText] = useState("");
 
-  // FOLLOW SYSTEM
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
 
-  const touchStartY = useRef(null);
-  const commentsEndRef = useRef(null);
-
   const user = auth.currentUser;
-  useEffect(() => {
-    if (location.state?.reels) {
-      setReels(location.state.reels);
-      setActiveIndex(Number(index) || 0);
-      setLoading(false);
-    } else {
-      fetchReels();
-    }
-  }, [location.state, index]);
-  /* ================= FETCH REELS ================= */
-  useEffect(() => {
-    const fetchReels = async () => {
-      try {
-        const trainerSnap = await getDocs(collection(db, "trainers"));
-        const instituteSnap = await getDocs(collection(db, "institutes"));
 
-        let allReels = [];
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
 
-        trainerSnap.forEach((docu) => {
-          const data = docu.data();
-          if (Array.isArray(data.reels)) {
-            data.reels.forEach((videoUrl, idx) => {
-              if (videoUrl) {
-                allReels.push({
-                  reelId: `trainer_${docu.id}_${idx}`,
-                  videoUrl,
-                  title: data.trainerName || "Trainer Reel",
-                  ownerId: docu.id,
-                  type: "trainer",
-                });
-              }
-            });
-          }
-        });
-
-        instituteSnap.forEach((docu) => {
-          const data = docu.data();
-          if (Array.isArray(data.reels)) {
-            data.reels.forEach((videoUrl, idx) => {
-              if (videoUrl) {
-                allReels.push({
-                  reelId: `institute_${docu.id}_${idx}`,
-                  videoUrl,
-                  title: data.instituteName || "Institute Reel",
-                  ownerId: docu.id,
-                  type: "institute",
-                });
-              }
-            });
-          }
-        });
-
-        setReels(allReels);
-        setLoading(false);
-      } catch (err) {
-        console.error("[Reels] Error:", err);
-        setLoading(false);
-      }
-    };
-
-    fetchReels();
-  }, []);
-  useEffect(() => {
-    if (!location.state?.reels) {
-      fetchReels(); // your existing fetch function
-    }
-  }, []);
   const reel =
     reels.length > 0 && reels[activeIndex] ? reels[activeIndex] : null;
 
-  /* ================= AUTO SCROLL COMMENTS ================= */
-  useEffect(() => {
-    if (commentsEndRef.current) {
-      commentsEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [comments]);
+  /* ================= FETCH REELS ================= */
+  // REPLACE FULL fetchReels FUNCTION WITH THIS
 
-  /* ================= PROFILE VIEW TRACK ================= */
-  useEffect(() => {
-    if (!reel || !user || !reel.ownerId) return;
+  // REPLACE YOUR EXISTING FETCH REELS SECTION + USEEFFECT CALLS WITH THIS
+  // This fixes: showing "Unknown Institute" / old location.state reels data / missing names
 
-    const registerProfileView = async () => {
-      const viewId = `${user.uid}_${reel.ownerId}`;
-      const viewRef = doc(db, "profileViews", viewId);
-      const analyticsRef = doc(db, "userAnalytics", reel.ownerId);
+  /* ================= FETCH REELS ================= */
+  const fetchReels = async () => {
+    try {
+      setLoading(true);
 
-      const viewSnap = await getDoc(viewRef);
+      const trainerSnap = await getDocs(collection(db, "trainers"));
+      const instituteSnap = await getDocs(collection(db, "institutes"));
 
-      if (!viewSnap.exists()) {
-        await setDoc(viewRef, {
-          viewerId: user.uid,
-          profileId: reel.ownerId,
-          createdAt: serverTimestamp(),
-        });
+      let allReels = [];
 
-        const analyticsSnap = await getDoc(analyticsRef);
+      /* ===== TRAINERS ===== */
+      trainerSnap.forEach((docu) => {
+        const data = docu.data();
 
-        if (!analyticsSnap.exists()) {
-          await setDoc(analyticsRef, {
-            profileViews: 1,
-            followers: 0,
-            connections: 0,
-            postEngagement: 0,
-            networkGrowth: 0,
-            weeklyGrowth: 0,
-            engagementRate: 0,
-            lastUpdated: serverTimestamp(),
-          });
-        } else {
-          await updateDoc(analyticsRef, {
-            profileViews: (analyticsSnap.data().profileViews || 0) + 1,
-            lastUpdated: serverTimestamp(),
+        const ownerName =
+          data.trainerName ||
+          data.name ||
+          data.fullName ||
+          data.displayName ||
+          data.userName ||
+          "Trainer";
+
+        const ownerPhoto =
+          data.profileImageUrl || data.profileImage || data.photoURL || "";
+
+        if (Array.isArray(data.reels)) {
+          data.reels.forEach((videoUrl, idx) => {
+            if (videoUrl) {
+              allReels.push({
+                reelId: `trainer_${docu.id}_${idx}`,
+                videoUrl,
+                title: ownerName,
+                ownerName,
+                ownerPhoto,
+                ownerId: docu.id,
+                type: "trainer",
+              });
+            }
           });
         }
+      });
+
+      /* ===== INSTITUTES ===== */
+      instituteSnap.forEach((docu) => {
+        const data = docu.data();
+
+        const ownerName =
+          data.instituteName ||
+          data.name ||
+          data.fullName ||
+          data.displayName ||
+          data.userName ||
+          "Institute";
+
+        const ownerPhoto =
+          data.profileImageUrl || data.profileImage || data.photoURL || "";
+
+        if (Array.isArray(data.reels)) {
+          data.reels.forEach((videoUrl, idx) => {
+            if (videoUrl) {
+              allReels.push({
+                reelId: `institute_${docu.id}_${idx}`,
+                videoUrl,
+                title: ownerName,
+                ownerName,
+                ownerPhoto,
+                ownerId: docu.id,
+                type: "institute",
+              });
+            }
+          });
+        }
+      });
+
+      setReels(allReels);
+      setActiveIndex(Number(index) || 0);
+      setLoading(false);
+    } catch (error) {
+      console.error("Fetch reels error:", error);
+      setLoading(false);
+    }
+  };
+
+  /* ================= IMPORTANT ================= */
+  /* DELETE your old location.state useEffect */
+  /* DELETE your duplicate fetchReels useEffect */
+
+  /* KEEP ONLY THIS ONE */
+  useEffect(() => {
+    fetchReels();
+  }, [index]);
+  // REPLACE ONLY THIS useEffect BLOCK
+
+  useEffect(() => {
+    // hide page scroll
+    document.body.style.overflow = "hidden";
+
+    // hide bottom navbar (if your navbar uses these selectors)
+    const nav =
+      document.querySelector("nav") ||
+      document.querySelector(".bottom-navbar") ||
+      document.getElementById("bottom-navbar");
+
+    if (nav) {
+      nav.style.display = "none";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+
+      if (nav) {
+        nav.style.display = "";
       }
     };
+  }, []);
 
-    registerProfileView();
-  }, [reel, user]);
-
-  /* ================= VIEW COUNT ================= */
+  /* ================= REEL VIEW COUNT ================= */
   useEffect(() => {
-    if (!reel || !user || !reel.reelId) return;
+    if (!reel || !user) return;
 
-    const viewRef = doc(db, "reelViews", reel.reelId + "_" + user.uid);
-    if (!reel?.reelId) return;
+    const run = async () => {
+      const viewRef = doc(db, "reelViews", `${reel.reelId}_${user.uid}`);
+      const reelRef = doc(db, "reels", reel.reelId);
 
-    const reelRef = doc(db, "reels", reel.reelId);
-
-    const registerView = async () => {
       const viewSnap = await getDoc(viewRef);
 
       if (!viewSnap.exists()) {
@@ -189,13 +203,18 @@ const ReelViewer = () => {
         });
 
         const reelSnap = await getDoc(reelRef);
+
         if (!reelSnap.exists()) {
-          await setDoc(reelRef, { views: 1, likes: 0 });
+          await setDoc(reelRef, {
+            views: 1,
+            likes: 0,
+            dislikes: 0,
+          });
           setViews(1);
         } else {
-          const newViews = (reelSnap.data().views || 0) + 1;
-          await updateDoc(reelRef, { views: newViews });
-          setViews(newViews);
+          const total = (reelSnap.data().views || 0) + 1;
+          await updateDoc(reelRef, { views: total });
+          setViews(total);
         }
       } else {
         const reelSnap = await getDoc(reelRef);
@@ -203,181 +222,33 @@ const ReelViewer = () => {
       }
     };
 
-    registerView();
-  }, [reel, user]);
+    run();
+  }, [reel]);
 
-  /* ================= LIKE ================= */
+  /* ================= LIKE/DISLIKE LOAD ================= */
   useEffect(() => {
-    if (!reel || !user || !reel.reelId) return;
+    if (!reel || !user) return;
 
-    const likeRef = doc(db, "reelLikes", reel.reelId + "_" + user.uid);
-    const reelRef = doc(db, "reels", reel.reelId);
+    const load = async () => {
+      const reelRef = doc(db, "reels", reel.reelId);
+      const likeRef = doc(db, "reelLikes", `${reel.reelId}_${user.uid}`);
+      const dislikeRef = doc(db, "reelDislikes", `${reel.reelId}_${user.uid}`);
 
-    const checkLike = async () => {
+      const reelSnap = await getDoc(reelRef);
       const likeSnap = await getDoc(likeRef);
-      const reelSnap = await getDoc(reelRef);
-
-      if (likeSnap.exists()) setLiked(true);
-      if (reelSnap.exists()) setLikes(reelSnap.data().likes || 0);
-    };
-
-    checkLike();
-  }, [reel, user]);
-  /* ================= DISLIKE ================= */ // 🔽 DISLIKE
-  useEffect(() => {
-    if (!reel || !user || !reel.reelId) return;
-
-    const dislikeRef = doc(db, "reelDislikes", reel.reelId + "_" + user.uid);
-    const reelRef = doc(db, "reels", reel.reelId);
-
-    const checkDislike = async () => {
       const dislikeSnap = await getDoc(dislikeRef);
-      const reelSnap = await getDoc(reelRef);
 
-      if (dislikeSnap.exists()) setDisliked(true);
-      if (reelSnap.exists()) setDislikes(reelSnap.data().dislikes || 0);
+      if (reelSnap.exists()) {
+        setLikes(reelSnap.data().likes || 0);
+        setDislikes(reelSnap.data().dislikes || 0);
+      }
+
+      setLiked(likeSnap.exists());
+      setDisliked(dislikeSnap.exists());
     };
 
-    checkDislike();
-  }, [reel, user]);
-
-  const toggleLike = async () => {
-    if (!user) return alert("Login required");
-
-    const likeRef = doc(db, "reelLikes", reel.reelId + "_" + user.uid);
-    const reelRef = doc(db, "reels", reel.reelId);
-    const reelSnap = await getDoc(reelRef);
-
-    if (liked) {
-      await deleteDoc(likeRef);
-      const newLikes = (reelSnap.data().likes || 1) - 1;
-      await updateDoc(reelRef, { likes: newLikes });
-      setLikes(newLikes);
-      setLiked(false);
-    } else {
-      await setDoc(likeRef, { userId: user.uid, reelId: reel.reelId });
-      const newLikes = (reelSnap.data().likes || 0) + 1;
-      await updateDoc(reelRef, { likes: newLikes });
-      setLikes(newLikes);
-      setLiked(true);
-    }
-  };
-  const toggleDislike = async () => {
-    // 🔽 DISLIKE
-    if (!user) return alert("Login required");
-
-    const dislikeRef = doc(db, "reelDislikes", reel.reelId + "_" + user.uid);
-    const reelRef = doc(db, "reels", reel.reelId);
-    const reelSnap = await getDoc(reelRef);
-
-    if (disliked) {
-      await deleteDoc(dislikeRef);
-      const newDislikes = Math.max((reelSnap.data().dislikes || 1) - 1, 0);
-      await updateDoc(reelRef, { dislikes: newDislikes });
-      setDislikes(newDislikes);
-      setDisliked(false);
-    } else {
-      await setDoc(dislikeRef, { userId: user.uid, reelId: reel.reelId });
-      const newDislikes = (reelSnap.data().dislikes || 0) + 1;
-      await updateDoc(reelRef, { dislikes: newDislikes });
-      setDislikes(newDislikes);
-      setDisliked(true);
-    }
-  };
-  /* ================= REALTIME DISLIKE COUNT ================= */ // 🔽 DISLIKE REALTIME
-  useEffect(() => {
-    if (!reel?.reelId) return;
-
-    const reelRef = doc(db, "reels", reel.reelId);
-
-    const unsub = onSnapshot(reelRef, (snap) => {
-      if (snap.exists()) {
-        setDislikes(snap.data().dislikes || 0);
-      }
-    });
-
-    return () => unsub();
-  }, [reel?.reelId]);
-
-  /* ================= FOLLOW SYSTEM ================= */
-  useEffect(() => {
-    if (!user || !reel) return;
-
-    if (!user || !reel?.ownerId) return;
-
-    const followRef = doc(db, "followers", `${user.uid}_${reel.ownerId}`);
-
-    const unsub = onSnapshot(followRef, (snap) => {
-      setIsFollowing(snap.exists());
-    });
-
-    return () => unsub();
-  }, [user, reel]);
-  useEffect(() => {
-    if (reels.length > 0) {
-      if (activeIndex >= reels.length) {
-        setActiveIndex(0); // reset safely
-      }
-    }
-  }, [reels]);
-  const followProfile = async () => {
-    if (!user || !reel) return;
-    if (followLoading) return;
-
-    setFollowLoading(true);
-
-    const followRef = doc(db, "followers", `${user.uid}_${reel.ownerId}`);
-    const analyticsRef = doc(db, "userAnalytics", reel.ownerId);
-
-    const snap = await getDoc(followRef);
-
-    if (!snap.exists()) {
-      await setDoc(followRef, {
-        followerId: user.uid,
-        profileId: reel.ownerId,
-        createdAt: serverTimestamp(),
-      });
-
-      const analyticsSnap = await getDoc(analyticsRef);
-      if (analyticsSnap.exists()) {
-        await updateDoc(analyticsRef, {
-          followers: (analyticsSnap.data().followers || 0) + 1,
-          connections: (analyticsSnap.data().connections || 0) + 1,
-          networkGrowth: (analyticsSnap.data().networkGrowth || 0) + 1,
-          lastUpdated: serverTimestamp(),
-        });
-      }
-    }
-
-    setFollowLoading(false);
-  };
-
-  const unfollowProfile = async () => {
-    if (!user || !reel) return;
-    if (followLoading) return;
-
-    setFollowLoading(true);
-
-    const followRef = doc(db, "followers", `${user.uid}_${reel.ownerId}`);
-    const analyticsRef = doc(db, "userAnalytics", reel.ownerId);
-
-    const snap = await getDoc(followRef);
-
-    if (snap.exists()) {
-      await deleteDoc(followRef);
-
-      const analyticsSnap = await getDoc(analyticsRef);
-      if (analyticsSnap.exists()) {
-        await updateDoc(analyticsRef, {
-          followers: Math.max((analyticsSnap.data().followers || 1) - 1, 0),
-          connections: Math.max((analyticsSnap.data().connections || 1) - 1, 0),
-          lastUpdated: serverTimestamp(),
-        });
-      }
-    }
-
-    setFollowLoading(false);
-  };
+    load();
+  }, [reel]);
 
   /* ================= COMMENTS ================= */
   useEffect(() => {
@@ -389,15 +260,98 @@ const ReelViewer = () => {
     );
 
     const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }));
-      setComments(list);
+      setComments(
+        snap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })),
+      );
     });
 
     return () => unsub();
   }, [reel]);
+
+  /* ================= FOLLOW ================= */
+  useEffect(() => {
+    if (!user || !reel) return;
+
+    const followRef = doc(db, "followers", `${user.uid}_${reel.ownerId}`);
+
+    const unsub = onSnapshot(followRef, (snap) => {
+      setIsFollowing(snap.exists());
+    });
+
+    return () => unsub();
+  }, [reel]);
+
+  /* ================= ACTIONS ================= */
+  const toggleLike = async () => {
+    if (!user) return;
+
+    const likeRef = doc(db, "reelLikes", `${reel.reelId}_${user.uid}`);
+    const reelRef = doc(db, "reels", reel.reelId);
+    const snap = await getDoc(reelRef);
+
+    const current = snap.data()?.likes || 0;
+
+    if (liked) {
+      await deleteDoc(likeRef);
+      await updateDoc(reelRef, { likes: Math.max(current - 1, 0) });
+      setLikes(Math.max(current - 1, 0));
+      setLiked(false);
+    } else {
+      await setDoc(likeRef, { reelId: reel.reelId, userId: user.uid });
+      await updateDoc(reelRef, { likes: current + 1 });
+      setLikes(current + 1);
+      setLiked(true);
+    }
+  };
+
+  const toggleDislike = async () => {
+    if (!user) return;
+
+    const dislikeRef = doc(db, "reelDislikes", `${reel.reelId}_${user.uid}`);
+    const reelRef = doc(db, "reels", reel.reelId);
+    const snap = await getDoc(reelRef);
+
+    const current = snap.data()?.dislikes || 0;
+
+    if (disliked) {
+      await deleteDoc(dislikeRef);
+      await updateDoc(reelRef, { dislikes: Math.max(current - 1, 0) });
+      setDislikes(Math.max(current - 1, 0));
+      setDisliked(false);
+    } else {
+      await setDoc(dislikeRef, { reelId: reel.reelId, userId: user.uid });
+      await updateDoc(reelRef, { dislikes: current + 1 });
+      setDislikes(current + 1);
+      setDisliked(true);
+    }
+  };
+
+  const followProfile = async () => {
+    if (!user || followLoading) return;
+
+    setFollowLoading(true);
+
+    await setDoc(doc(db, "followers", `${user.uid}_${reel.ownerId}`), {
+      followerId: user.uid,
+      profileId: reel.ownerId,
+      createdAt: serverTimestamp(),
+    });
+
+    setFollowLoading(false);
+  };
+
+  const unfollowProfile = async () => {
+    if (!user || followLoading) return;
+
+    setFollowLoading(true);
+
+    await deleteDoc(doc(db, "followers", `${user.uid}_${reel.ownerId}`));
+
+    setFollowLoading(false);
+  };
 
   const sendComment = async () => {
     if (!user || !commentText.trim()) return;
@@ -411,45 +365,40 @@ const ReelViewer = () => {
 
     setCommentText("");
   };
-  /* ================= PROFILE VIEW TRACK (ON CLICK) ================= */
 
-  const trackProfileView = async (ownerId, ownerType) => {
-    try {
-      const viewer = auth.currentUser;
-      if (!viewer) return;
-
-      // ❌ prevent self-view count
-      if (viewer.uid === ownerId) return;
-
-      await addDoc(collection(db, "profileViews"), {
-        ownerId: ownerId, // profile owner (institute/trainer)
-        ownerType: ownerType, // "institute" | "trainer"
-        viewerId: viewer.uid, // who viewed
-        timestamp: serverTimestamp(),
-      });
-
-      console.log("✅ Profile view tracked");
-    } catch (err) {
-      console.error("❌ Profile view track failed:", err);
-    }
+  /* ================= TOUCH ================= */
+  const onTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
   };
-  /* ================= SWIPE ================= */
-  const onTouchStart = (e) => (touchStartY.current = e.touches[0].clientY);
-  const onTouchEnd = (e) => {
-    if (!touchStartY.current) return;
-    const diff = touchStartY.current - e.changedTouches[0].clientY;
 
-    if (diff > 80) setActiveIndex((p) => (p + 1 >= reels.length ? 0 : p + 1));
-    if (diff < -80)
-      setActiveIndex((p) => (p - 1 < 0 ? reels.length - 1 : p - 1));
+  const onTouchEnd = (e) => {
+    const endY = e.changedTouches[0].clientY;
+    const endX = e.changedTouches[0].clientX;
+
+    const diffY = touchStartY.current - endY;
+    const diffX = touchStartX.current - endX;
+
+    // swipe left/right = back page
+    if (Math.abs(diffX) > 80 && Math.abs(diffX) > Math.abs(diffY)) {
+      navigate(-1);
+      return;
+    }
+
+    // swipe up/down = next/prev reel
+    if (diffY > 80) {
+      setActiveIndex((prev) => (prev + 1 >= reels.length ? 0 : prev + 1));
+    }
+
+    if (diffY < -80) {
+      setActiveIndex((prev) => (prev - 1 < 0 ? reels.length - 1 : prev - 1));
+    }
   };
 
   if (loading || !reel) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-black text-white">
-        <div className="animate-pulse text-lg font-semibold">
-          Loading reel...
-        </div>
+      <div className="w-screen h-screen bg-black text-white flex items-center justify-center">
+        Loading...
       </div>
     );
   }
@@ -458,175 +407,165 @@ const ReelViewer = () => {
     <div
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "black",
-        zIndex: 999999,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
+      className="fixed inset-0 z-[99999] bg-black overflow-hidden"
     >
-      {/* SIDE NAVIGATION OUTSIDE VIDEO */}
-      <div
-        style={{
-          position: "absolute",
-          right: "400px",
-          top: "50%",
-          transform: "translateY(-50%)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
-          zIndex: 20,
-        }}
-      >
-        {/* UP */}
+      {/* VIDEO */}
+      <AnimatePresence mode="wait">
+        <motion.video
+          key={reel.reelId}
+          src={reel.videoUrl}
+          autoPlay
+          muted={false}
+          playsInline
+          loop
+          controls={false}
+          initial={{ opacity: 0.5, scale: 1.04 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0.5 }}
+          transition={{ duration: 0.25 }}
+          className="absolute inset-0 w-full h-full object-contain bg-black"
+        />
+      </AnimatePresence>
+
+      {/* TOP */}
+      <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/60 to-transparent">
         <button
-          onClick={() =>
-            setActiveIndex((p) => (p - 1 < 0 ? reels.length - 1 : p - 1))
-          }
-          style={{
-            width: "50px",
-            height: "50px",
-            borderRadius: "50%",
-            background: "#ff7a00",
-            color: "white",
-            fontSize: "22px",
-            border: "none",
-            cursor: "pointer",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-          }}
+          onClick={() => navigate(-1)}
+          className="text-white bg-black/40 p-2 rounded-full"
         >
-          ↑
+          <ArrowLeft size={18} />
         </button>
 
-        {/* DOWN */}
+        <div className="text-white text-sm flex items-center gap-1">
+          <Eye size={16} />
+          {views}
+        </div>
+      </div>
+
+      {/* RIGHT ACTIONS */}
+      <div className="absolute right-3 bottom-28 flex flex-col gap-5 items-center text-white">
+        <button onClick={toggleLike}>
+          <Heart
+            size={28}
+            fill={liked ? "white" : "none"}
+            className={liked ? "text-red-500" : "text-white"}
+          />
+          <p className="text-xs">{likes}</p>
+        </button>
+
+        <button onClick={toggleDislike}>
+          <ThumbsDown
+            size={26}
+            className={disliked ? "text-red-500" : "text-white"}
+          />
+          <p className="text-xs">{dislikes}</p>
+        </button>
+
+        <button onClick={() => setShowComments(true)}>
+          <MessageCircle size={28} />
+          <p className="text-xs">{comments.length}</p>
+        </button>
+
         <button
-          onClick={() =>
-            setActiveIndex((p) => (p + 1 >= reels.length ? 0 : p + 1))
-          }
-          style={{
-            width: "50px",
-            height: "50px",
-            borderRadius: "50%",
-            background: "#ff7a00",
-            color: "white",
-            fontSize: "22px",
-            border: "none",
-            cursor: "pointer",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-          }}
+          onClick={() => navigator.clipboard.writeText(window.location.href)}
         >
-          ↓
+          <Share2 size={26} />
         </button>
       </div>
 
-      {/* MAIN PHONE FRAME */}
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "420px",
-          height: "100vh",
-          position: "relative",
-          overflow: "hidden",
-          borderRadius: "12px",
-        }}
-      >
-        <AnimatePresence mode="wait">
-          <motion.video
-            key={reel.reelId}
-            src={reel.videoUrl}
-            autoPlay
-            loop
-            playsInline
-            controls={false}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
-        </AnimatePresence>
+      {/* BOTTOM INFO */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white">
+        <div className="flex items-center gap-3 mb-3">
+          {/* PROFILE PHOTO */}
+          {reel.ownerPhoto ? (
+            <img
+              src={reel.ownerPhoto}
+              alt="owner"
+              className="w-11 h-11 rounded-full object-cover border border-white"
+            />
+          ) : (
+            <img
+              src={reel.profileImage || "/default-user.png"}
+              alt="profile"
+              className="w-10 h-10 rounded-full object-cover border border-white"
+            />
+          )}
 
-        {/* VIEWS BADGE */}
-        <div className="absolute top-3 right-3 bg-white/90 text-black text-xs font-semibold px-3 py-1 rounded-full">
-          {views} Views
-        </div>
-
-        {/* PROFILE + FOLLOW BAR */}
-        <div className="absolute bottom-16 left-4 text-white flex items-center gap-2">
-          <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+          {/* OWNER NAME */}
 
           <span className="text-sm font-semibold">{reel.title}</span>
 
+          {/* FOLLOW BUTTON */}
           {!isFollowing ? (
             <button
               onClick={followProfile}
               disabled={followLoading}
-              className="bg-orange-500 text-white text-xs px-3 py-1 rounded font-bold"
+              className="bg-orange-500 px-3 py-1 rounded-full text-sm flex items-center gap-1"
             >
+              <UserPlus size={14} />
               Follow
             </button>
           ) : (
             <button
               onClick={unfollowProfile}
               disabled={followLoading}
-              className="bg-white text-black text-xs px-3 py-1 rounded font-bold"
+              className="bg-white text-black px-3 py-1 rounded-full text-sm flex items-center gap-1"
             >
+              <UserCheck size={14} />
               Following
             </button>
           )}
         </div>
 
-        {/* ACTION BUTTONS */}
-        <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5 text-white">
-          {/* LIKE */}
-          <button onClick={toggleLike} className="text-xl">
-            {liked ? "❤️" : "🤍"}
-            <div className="text-xs">{likes}</div>
-          </button>
-
-          {/* DISLIKE */}
-          <button onClick={toggleDislike} className="text-xl">
-            {disliked ? "👎" : "👍"}
-            <div className="text-xs">{dislikes}</div>
-          </button>
-
-          {/* COMMENTS */}
-          <button onClick={() => setShowComments(true)} className="text-xl">
-            💬
-            <div className="text-xs">{comments.length}</div>
-          </button>
-
-          {/* SHARE */}
-          <button
-            onClick={() => navigator.clipboard.writeText(window.location.href)}
-            className="text-xl"
-          >
-            📤
-          </button>
-        </div>
-
-        {/* SIDE NAVIGATION (PC) */}
-        {/* SIDE NAVIGATION (PC / LAPTOP) */}
-        {/* SIDE NAVIGATION (PC / LAPTOP) */}
-
-        {/* PROFILE BUTTON */}
         <button
-          onClick={async () => {
-            await trackProfileView(reel.ownerId, reel.type);
+          onClick={() =>
             navigate(
               reel.type === "trainer"
                 ? `/trainers/${reel.ownerId}`
                 : `/institutes/${reel.ownerId}`,
-            );
-          }}
-          className="absolute bottom-4 left-4 bg-white text-black px-4 py-2 rounded-full text-xs font-bold shadow-lg"
+            )
+          }
+          className="bg-white text-black px-4 py-2 rounded-full text-sm font-semibold"
         >
           View Profile
         </button>
       </div>
+      {/* COMMENTS */}
+      {showComments && (
+        <div className="absolute inset-0 bg-black/60 flex items-end z-50">
+          <div className="bg-white w-full h-[70vh] rounded-t-3xl flex flex-col">
+            <div className="p-4 border-b flex justify-between">
+              <h2 className="font-semibold">Comments</h2>
+              <button onClick={() => setShowComments(false)}>✕</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {comments.map((c) => (
+                <div key={c.id}>
+                  <p className="font-semibold text-sm">{c.userName}</p>
+                  <p className="text-sm text-gray-700">{c.text}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-3 border-t flex gap-2">
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Add comment..."
+                className="flex-1 border rounded-full px-4 py-2 outline-none"
+              />
+
+              <button
+                onClick={sendComment}
+                className="bg-orange-500 text-white px-4 rounded-full"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

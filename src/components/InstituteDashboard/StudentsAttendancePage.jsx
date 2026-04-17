@@ -14,6 +14,9 @@ import { useAuth } from "../../context/AuthContext";
 import { Pagination } from "./shared";
 import { Search, Download, ChevronDown } from "lucide-react";
 import * as XLSX from "xlsx";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 const today = new Date().toISOString().split("T")[0];
 const absenceReasons = [
   "On Leave",
@@ -62,7 +65,15 @@ const StudentsAttendancePage = () => {
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
-  const [selectedBranch, setSelectedBranch] = useState("");
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ✅ FIRST define this
+  const passedBranch = location.state?.branch || "";
+
+  // ✅ THEN use it
+  const [selectedBranch, setSelectedBranch] = useState(passedBranch); // ✅ FIX
   const [summary, setSummary] = useState({
     totalStudents: 0,
     presentToday: 0,
@@ -73,7 +84,11 @@ const StudentsAttendancePage = () => {
   const [exportToDate, setExportToDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
+  useEffect(() => {
+    if (passedBranch) {
+      setSelectedBranch(passedBranch);
+    }
+  }, [passedBranch]);
   // Load Students
   useEffect(() => {
     if (!user || institute?.role !== "institute") return;
@@ -332,6 +347,29 @@ const StudentsAttendancePage = () => {
     }
   };
   useEffect(() => {
+    let startX = 0;
+
+    const handleTouchStart = (e) => {
+      startX = e.touches[0].clientX;
+    };
+
+    const handleTouchEnd = (e) => {
+      const endX = e.changedTouches[0].clientX;
+
+      if (endX - startX > 100) {
+        navigate(-1); // swipe right → back
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, []);
+  useEffect(() => {
     setCurrentPage(1);
   }, [
     search,
@@ -429,9 +467,16 @@ const StudentsAttendancePage = () => {
     <div className="w-full min-h-screen bg-white p-3 sm:p-4 pb-24">
       {/* HEADER */}
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-[#FF6A00]">
-          Students Attendance
-        </h1>
+        <div className="flex items-center gap-2">
+          <ArrowLeft
+            size={20}
+            className="cursor-pointer"
+            onClick={() => navigate(-1)}
+          />
+          <h1 className="text-xl font-bold text-[#FF6A00]">
+            Students Attendance
+          </h1>
+        </div>
 
         <input
           type="date"
@@ -480,7 +525,11 @@ const StudentsAttendancePage = () => {
           <Download size={18} />
         </button>
       </div>
-
+      {selectedBranch && (
+        <div className="text-sm mb-2 text-[#FF6A00] font-medium">
+          Showing: {selectedBranch}
+        </div>
+      )}
       {/* FILTER ROW (SCROLLABLE) */}
       <div className="flex gap-2 overflow-x-auto mb-4">
         <select

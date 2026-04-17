@@ -1,6 +1,18 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import {
+  Search,
+  ArrowLeft,
+  Waves,
+  Droplets,
+  Sailboat,
+  Wind,
+  Activity,
+  Fish,
+  Ship,
+  Compass,
+  LifeBuoy,
+} from "lucide-react";
 
 const AquaticSports = () => {
   const navigate = useNavigate();
@@ -9,30 +21,45 @@ const AquaticSports = () => {
   const [showChoice, setShowChoice] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
 
+  /* Swipe Back */
+  const touchStartX = React.useRef(0);
+  const touchEndX = React.useRef(0);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.changedTouches[0].screenX;
+  };
+
+  const handleTouchEnd = (e) => {
+    touchEndX.current = e.changedTouches[0].screenX;
+
+    const diff = touchEndX.current - touchStartX.current;
+
+    if (touchStartX.current < 60 && diff > 90) {
+      navigate(-1);
+    }
+  };
+
   const categories = [
-    { name: "Swimming", image: "/images/swimming.jpeg" },
-    { name: "Water Polo", image: "/images/water-polo.jpeg" },
-    { name: "Surfing", image: "/images/surfing.jpeg" },
-    { name: "Scuba Diving", image: "/images/scuba-diving.jpeg" },
-    { name: "Snorkeling", image: "/images/snorkeling.jpeg" },
-    { name: "Freediving", image: "/images/freediving.jpeg" },
-    { name: "Kayaking", image: "/images/kayaking.jpeg" },
-    { name: "Canoeing", image: "/images/canoeing.jpeg" },
-    { name: "Rowing", image: "/images/rowing.jpeg" },
-    { name: "Sailing", image: "/images/sailing.jpeg" },
-    { name: "Windsurfing", image: "/images/windsurfing.jpeg" },
-    { name: "Kite Surfing", image: "/images/kite-surfing.jpeg" },
-    { name: "Jet Skiing", image: "/images/jet-skiing.jpeg" },
-    { name: "Wakeboarding", image: "/images/wakeboarding.jpeg" },
-    { name: "Water Skiing", image: "/images/water-skiing.jpeg" },
-    {
-      name: "Stand-up Paddleboarding",
-      image: "/images/stand-up-paddleboarding.jpeg",
-    },
-    { name: "Whitewater Rafting", image: "/images/whitewater-rafting.jpeg" },
-    { name: "Dragon Boat Racing", image: "/images/dragon-boat-racing.jpeg" },
-    { name: "Artistic Swimming", image: "/images/artistic-swimming.jpeg" },
-    { name: "Open Water Swimming", image: "/images/open-water-swimming.jpeg" },
+    { name: "Swimming", icon: Waves },
+    { name: "Water Polo", icon: Activity },
+    { name: "Surfing", icon: Waves },
+    { name: "Scuba Diving", icon: Fish },
+    { name: "Snorkeling", icon: Fish },
+    { name: "Freediving", icon: Droplets },
+    { name: "Kayaking", icon: Sailboat },
+    { name: "Canoeing", icon: Sailboat },
+    { name: "Rowing", icon: Sailboat },
+    { name: "Sailing", icon: Ship },
+    { name: "Windsurfing", icon: Wind },
+    { name: "Kite Surfing", icon: Wind },
+    { name: "Jet Skiing", icon: Compass },
+    { name: "Wakeboarding", icon: Activity },
+    { name: "Water Skiing", icon: Activity },
+    { name: "Stand-up Paddleboarding", icon: Sailboat },
+    { name: "Whitewater Rafting", icon: LifeBuoy },
+    { name: "Dragon Boat Racing", icon: Ship },
+    { name: "Artistic Swimming", icon: Waves },
+    { name: "Open Water Swimming", icon: Waves },
   ];
 
   const filteredCategories = categories.filter((item) =>
@@ -40,13 +67,23 @@ const AquaticSports = () => {
   );
 
   return (
-    <div className="bg-[#FFF9F5] min-h-screen px-4 py-6">
-      {/* HEADER */}
-      <h1 className="text-2xl font-bold mb-4">Explore Subcategories</h1>
+    <div
+      className="bg-[#FFF9F5] min-h-screen px-4 py-5"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* TOP BAR */}
+      <div className="flex items-center gap-3 mb-5">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-full bg-white shadow flex items-center justify-center active:scale-95"
+        >
+          <ArrowLeft size={20} />
+        </button>
 
-      {/* SEARCH + PROFILE */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex-grow bg-white border border-gray-200 rounded-full px-4 py-2 flex items-center">
+        {/* Search */}
+        <div className="flex-1 bg-white border border-gray-200 rounded-full px-4 py-2 flex items-center">
           <Search size={18} className="text-gray-400 mr-2" />
           <input
             type="text"
@@ -57,19 +94,24 @@ const AquaticSports = () => {
           />
         </div>
 
-        {/* PROFILE ICON */}
-        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+        {/* Profile */}
+        <div className="w-10 h-10 rounded-full bg-[#FF6A00] text-white flex items-center justify-center font-bold">
           👤
         </div>
       </div>
 
+      {/* TITLE */}
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        Explore Subcategories
+      </h1>
+
       {/* COUNT */}
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-gray-500 mb-5">
         {filteredCategories.length} Subcategories
       </p>
 
       {/* GRID */}
-      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-8">
         {filteredCategories.map((item) => (
           <div
             key={item.name}
@@ -77,39 +119,24 @@ const AquaticSports = () => {
               setSelectedSubCategory(item.name);
               setShowChoice(true);
             }}
-            className="relative h-[160px] rounded-2xl overflow-hidden cursor-pointer"
+            className="h-[120px] rounded-2xl bg-white shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-md transition active:scale-95"
           >
-            {/* IMAGE */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
+            <item.icon size={28} className="text-[#FF6A00]" />
 
-            {/* OVERLAY */}
-            <div className="absolute inset-0 bg-black/30"></div>
-
-            {/* TITLE */}
-            <div className="absolute top-3 left-0 right-0 text-center">
-              <span className="text-orange-400 font-bold text-sm">
-                {item.name}
-              </span>
-            </div>
+            <p className="text-xs text-gray-700 text-center px-1 font-medium leading-tight">
+              {item.name}
+            </p>
           </div>
         ))}
       </div>
 
-      {/* BOTTOM SHEET MODAL */}
+      {/* MODAL */}
       {showChoice && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white w-full max-w-md rounded-xl p-6 text-center">
-            <h2 className="text-lg font-bold text-center mb-2">
-              Aquatic Sports
-            </h2>
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 text-center animate-in fade-in zoom-in duration-200">
+            <h2 className="text-lg font-bold mb-2">Aquatic Sports</h2>
 
-            <p className="text-center text-gray-500 mb-4">
-              What are you looking for?
-            </p>
+            <p className="text-gray-500 mb-5">What are you looking for?</p>
 
             <div className="flex flex-col gap-3">
               <button
@@ -119,9 +146,8 @@ const AquaticSports = () => {
                       selectedSubCategory,
                     )}`,
                   );
-                  setShowChoice(false);
                 }}
-                className="bg-[#FF6A00] text-white py-3 rounded-md font-semibold"
+                className="bg-[#FF6A00] text-white py-3 rounded-xl font-semibold"
               >
                 Find Trainers
               </button>
@@ -133,9 +159,8 @@ const AquaticSports = () => {
                       selectedSubCategory,
                     )}`,
                   );
-                  setShowChoice(false);
                 }}
-                className="border border-[#FF6A00] text-[#FF6A00] py-3 rounded-md font-semibold"
+                className="border border-[#FF6A00] text-[#FF6A00] py-3 rounded-xl font-semibold"
               >
                 Find Institutes
               </button>
@@ -143,7 +168,7 @@ const AquaticSports = () => {
 
             <button
               onClick={() => setShowChoice(false)}
-              className="mt-4 text-sm text-gray-500 w-full"
+              className="mt-4 text-sm text-gray-500 font-medium"
             >
               Cancel
             </button>

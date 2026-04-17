@@ -1,7 +1,18 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, User } from "lucide-react";
-
+import {
+  Target,
+  Circle,
+  Disc,
+  Crosshair,
+  Activity,
+  Flag,
+  Grid,
+  Zap,
+  Aperture,
+  HelpCircle,
+} from "lucide-react";
 const TargetPrecisionPage = () => {
   const navigate = useNavigate();
   const [selectedSubCategory, setSelectedSubCategory] = React.useState(null);
@@ -9,34 +20,37 @@ const TargetPrecisionPage = () => {
   const [searchTerm, setSearchTerm] = React.useState("");
   const category = "Precision Sports";
   const categories = [
-    { name: "Archery", image: "/images/archery.jpeg" },
-    { name: "Golf", image: "/images/golf.jpeg" },
-    { name: "Bowling", image: "/images/bowling.jpeg" },
-    { name: "Darts", image: "/images/darts.jpeg" },
-    { name: "Snooker", image: "/images/snooker.jpeg" },
-    { name: "Pool", image: "/images/pool.jpeg" },
-    { name: "Billiards", image: "/images/billiards.jpeg" },
-    { name: "Target Shooting", image: "/images/target-shooting.jpeg" },
-    {
-      name: "Clay Pigeon Shooting",
-      image: "/images/clay-pigeon-shooting.jpeg",
-    },
-    { name: "Air Rifle Shooting", image: "/images/air-rifle-shooting.jpeg" },
-    { name: "Air Pistol Shooting", image: "/images/air-pistol-shooting.jpeg" },
-    { name: "Croquet", image: "/images/croquet.jpeg" },
-    { name: "Petanque", image: "/images/petanque.jpeg" },
-    { name: "Bocce", image: "/images/bocce.jpeg" },
-    { name: "Lawn Bowls", image: "/images/lawn-bowls.jpeg" },
-    { name: "Carom Billiards", image: "/images/carom-billiards.jpeg" },
-    { name: "Nine-Pin Bowling", image: "/images/nine-pin-bowling.jpeg" },
-    { name: "Disc Golf", image: "/images/disc-golf.jpeg" },
-    { name: "Kubb", image: "/images/kubb.jpeg" },
-    { name: "Pitch and Putt", image: "/images/pitch-and-putt.jpeg" },
-    { name: "Shove Ha’penny", image: "/images/shove-hapenny.jpeg" },
-    { name: "Toad in the Hole", image: "/images/toad-in-the-hole.jpeg" },
-    { name: "Bat and Trap", image: "/images/bat-and-trap.jpeg" },
-    { name: "Boccia", image: "/images/boccia.jpg" },
-    { name: "Gateball", image: "/images/gateball.jpg" },
+    { name: "Archery", icon: Target },
+    { name: "Golf", icon: Flag },
+    { name: "Bowling", icon: Circle },
+    { name: "Darts", icon: Crosshair },
+    { name: "Snooker", icon: Circle },
+    { name: "Pool", icon: Circle },
+    { name: "Billiards", icon: Circle },
+
+    { name: "Target Shooting", icon: Crosshair },
+    { name: "Clay Pigeon Shooting", icon: Target },
+    { name: "Air Rifle Shooting", icon: Crosshair },
+    { name: "Air Pistol Shooting", icon: Crosshair },
+
+    { name: "Croquet", icon: Grid },
+    { name: "Petanque", icon: Circle },
+    { name: "Bocce", icon: Circle },
+    { name: "Lawn Bowls", icon: Circle },
+
+    { name: "Carom Billiards", icon: Circle },
+    { name: "Nine-Pin Bowling", icon: Circle },
+
+    { name: "Disc Golf", icon: Disc },
+    { name: "Kubb", icon: Grid },
+    { name: "Pitch and Putt", icon: Flag },
+
+    { name: "Shove Ha’penny", icon: Grid },
+    { name: "Toad in the Hole", icon: HelpCircle },
+    { name: "Bat and Trap", icon: Activity },
+
+    { name: "Boccia", icon: Circle },
+    { name: "Gateball", icon: Activity },
   ];
 
   const filteredCategories = categories.filter((item) =>
@@ -75,24 +89,13 @@ const TargetPrecisionPage = () => {
               setSelectedSubCategory(item.name);
               setShowChoice(true);
             }}
-            className="relative rounded-2xl overflow-hidden cursor-pointer h-44"
+            className="h-[120px] rounded-2xl bg-white shadow-md flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-lg transition"
           >
-            {/* IMAGE */}
-            <img
-              src={item.image}
-              alt={item.name}
-              className="w-full h-full object-cover"
-            />
+            <item.icon size={28} className="text-[#FF6A00]" />
 
-            {/* OVERLAY */}
-            <div className="absolute inset-0 bg-black/30"></div>
-
-            {/* TEXT */}
-            <div className="absolute top-3 left-0 right-0 text-center px-1">
-              <span className="text-orange-500 font-bold text-xs sm:text-sm leading-tight">
-                {item.name}
-              </span>
-            </div>
+            <p className="mt-2 text-xs text-gray-700 text-center px-1 font-medium">
+              {item.name}
+            </p>
           </div>
         ))}
       </div>
