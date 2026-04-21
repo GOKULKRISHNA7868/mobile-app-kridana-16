@@ -2,16 +2,24 @@
 import React from "react";
 import { motion } from "framer-motion";
 import useTheme from "../hooks/useTheme";
-
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 const AboutUsSection = () => {
   const [darkMode] = useTheme();
-
+  const navigate = useNavigate();
   const sectionBg = darkMode ? "bg-gray-900" : "bg-[#F7F1EC]";
 
   return (
     <section
       className={`pt-12 md:pt-16 pb-16 transition-colors duration-500 ${sectionBg} min-h-screen`}
     >
+      <button
+        onClick={() => navigate("/")}
+        className="flex items-center gap-2 text-[#FF6A00] font-semibold mb-6"
+      >
+        <ArrowLeft size={18} />
+        Back
+      </button>
       <div className="max-w-6xl mx-auto px-4 md:px-6">
         {/* ---------------- ABOUT US HEADING ---------------- */}
         <motion.div
@@ -70,7 +78,9 @@ const AboutUsSection = () => {
             <li>• Helping small businesses go digital</li>
             <li>• Connecting individuals with new clients</li>
             <li>• Making local businesses more visible and accessible</li>
-            <li>• Supporting collaboration across B2B, B2C, and C2C ecosystems</li>
+            <li>
+              • Supporting collaboration across B2B, B2C, and C2C ecosystems
+            </li>
           </ul>
 
           <p className="mb-8 font-medium">
@@ -84,8 +94,8 @@ const AboutUsSection = () => {
           </h3>
 
           <p className="mb-2 text-justify">
-            Kridana is a product of Kdastsho Fintech Solutions Private Limited, a
-            fintech company dedicated to building impactful products and
+            Kridana is a product of Kdastsho Fintech Solutions Private Limited,
+            a fintech company dedicated to building impactful products and
             services that empower individuals and businesses through technology.
           </p>
 
@@ -130,7 +140,6 @@ const AboutUsSection = () => {
         >
           Meet Our Team
         </motion.h2>
-      
 
         <div className="grid md:grid-cols-3 gap-10 mt-16">
           {[
@@ -138,43 +147,37 @@ const AboutUsSection = () => {
               img: "/images/ceo.jpg",
               name: "Sudha Shashank Reddy",
               role: "Chief Executive Officer (CEO)",
-              desc:
-                "A strategic leader driving innovation, growth and sustainable digital transformation.",
+              desc: "A strategic leader driving innovation, growth and sustainable digital transformation.",
             },
             {
               img: "/images/hr.jpg",
               name: "Kaipa Sai Ram Reddy",
               role: "Human Resources of KDASTSHO FINTECH SOLUTIONS",
-              desc:
-                "A data-driven leader unlocking full business potential with secure and scalable data solutions.",
+              desc: "A data-driven leader unlocking full business potential with secure and scalable data solutions.",
             },
             {
               img: "/images/harini.jpg",
               name: "Bujaranpally Harini",
               role: "UX/UI Designer",
-              desc:
-                "A future-focused tech creator crafting smart and scalable products that redefine challenges as opportunities.",
+              desc: "A future-focused tech creator crafting smart and scalable products that redefine challenges as opportunities.",
             },
             {
               img: "/images/gokul.jpg",
               name: "TUPAKULA GOKUL KRISHNA",
               role: "Full Stack Developer",
-              desc:
-                "A passionate tech builder developing intelligent, scalable products that turn every challenge into an opportunity.",
+              desc: "A passionate tech builder developing intelligent, scalable products that turn every challenge into an opportunity.",
             },
             {
               img: "/images/sharanya.jpg",
               name: "Gajula Sharanya",
               role: "Senior Developer",
-              desc:
-                "An operations expert transforming data into strategic decisions that accelerate growth.",
+              desc: "An operations expert transforming data into strategic decisions that accelerate growth.",
             },
             {
               img: "/images/swathi.jpg",
               name: "Sudha Swathi",
               role: "Software Developer",
-              desc:
-                "A tech visionary building intelligent, scalable products that convert challenges into opportunities.",
+              desc: "A tech visionary building intelligent, scalable products that convert challenges into opportunities.",
             },
           ].map((member, i) => (
             <motion.div

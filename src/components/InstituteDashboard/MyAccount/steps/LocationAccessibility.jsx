@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../../firebase";
 import { useAuth } from "../../../../context/AuthContext";
-
+import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
 const LocationAccessibility = ({ setStep }) => {
   const { user } = useAuth();
 
@@ -87,52 +88,80 @@ const LocationAccessibility = ({ setStep }) => {
 
   // 🔥 GET CURRENT LOCATION
   const handleGetLocation = async () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation not supported");
-      return;
-    }
-
     try {
       setLocLoading(true);
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
+      let lat;
+      let lon;
 
-          setLatitude(String(lat));
-          setLongitude(String(lon));
+      // ✅ MOBILE APP (Capacitor Android/iOS)
+      if (Capacitor.isNativePlatform()) {
+        const permission = await Geolocation.requestPermissions();
 
-          // 🌍 Reverse Geocoding (FREE)
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
-          );
-          const data = await res.json();
-
-          const address = data.display_name || "";
-
-          setLocationName(address);
-
-          // 🔥 Auto-fill full address
-          setFormData((prev) => ({
-            ...prev,
-            fullAddress: address,
-          }));
-
+        if (
+          permission.location !== "granted" &&
+          permission.coarseLocation !== "granted"
+        ) {
+          alert("Location permission denied");
           setLocLoading(false);
-        },
-        (error) => {
-          console.error(error);
-          alert("Unable to fetch location");
+          return;
+        }
+
+        const position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000,
+        });
+
+        lat = position.coords.latitude;
+        lon = position.coords.longitude;
+      }
+
+      // ✅ DESKTOP / WEB
+      else {
+        if (!navigator.geolocation) {
+          alert("Geolocation not supported");
           setLocLoading(false);
-        },
+          return;
+        }
+
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+          });
+        });
+
+        lat = position.coords.latitude;
+        lon = position.coords.longitude;
+      }
+
+      // ✅ SET LOCATION
+      setLatitude(String(lat));
+      setLongitude(String(lon));
+
+      // 🌍 Reverse Geocoding
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
       );
-    } catch (err) {
-      console.error(err);
+
+      const data = await res.json();
+
+      const address = data.display_name || "";
+
+      setLocationName(address);
+
+      setFormData((prev) => ({
+        ...prev,
+        fullAddress: address,
+      }));
+
+      setLocLoading(false);
+    } catch (error) {
+      console.error(error);
+      alert("Unable to fetch location");
       setLocLoading(false);
     }
   };
-
   // ✅ HANDLE CHANGE
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -248,7 +277,8 @@ const LocationAccessibility = ({ setStep }) => {
   };
 
   const inputClass = (field) =>
-    `border ${errors[field] ? "border-red-500" : "border-gray-300"
+    `border ${
+      errors[field] ? "border-red-500" : "border-gray-300"
     } rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500`;
 
   return (

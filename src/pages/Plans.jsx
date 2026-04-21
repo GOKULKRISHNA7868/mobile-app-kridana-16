@@ -10,6 +10,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+
+import { ArrowLeft } from "lucide-react";
 export default function Plans() {
   const navigate = useNavigate();
   const [billing, setBilling] = useState("monthly");
@@ -178,6 +180,14 @@ export default function Plans() {
   };
   return (
     <div className="min-h-screen bg-white flex flex-col items-center py-16">
+      <button
+        onClick={() => navigate("/")}
+        className="absolute left-2 top-5 flex items-center gap-2 
+    text-white bg-[#FF6A00] px-3 py-1.5 rounded-md backdrop-blur-sm"
+      >
+        <ArrowLeft size={18} />
+        <span className="text-sm">Back</span>
+      </button>
       <h1 className="text-3xl font-bold mb-2">Get Started</h1>
       <p className="text-gray-500 mb-6">
         Start for free, pick a plan later. Ready to be part of the future

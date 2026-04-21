@@ -6,6 +6,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { Filter } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+
 export default function ViewInstitutes() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -362,6 +364,13 @@ export default function ViewInstitutes() {
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-16 py-12">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex  left-0 items-center gap-2 text-[#FF6A00] font-semibold mb-6"
+      >
+        <ArrowLeft size={18} />
+        Back
+      </button>
       <h1 className="text-4xl font-bold text-[#ff7a00] mb-8">Institutes</h1>
       <div className="md:hidden flex justify-between items-center px-4 py-3 border-b bg-white sticky top-0 z-40">
         <h1 className="text-lg font-bold text-[#ff7a00]">
@@ -517,7 +526,7 @@ rounded-md px-3 h-[45px] cursor-pointer`}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-20">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-2 md:mt-4">
           {/* LIST */}
           {filteredInstitutes.length === 0 ? (
             <div className="text-center mt-12">

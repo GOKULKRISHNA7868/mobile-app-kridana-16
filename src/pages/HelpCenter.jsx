@@ -9,7 +9,10 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 const HelpCenter = () => {
+  const navigate = useNavigate();
   const [showSuccess, setShowSuccess] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const { user } = useAuth();
@@ -91,6 +94,13 @@ const HelpCenter = () => {
     <div className="w-full min-h-screen bg-[#E3B499] flex justify-center items-start md:items-center py-10 md:py-16 px-4">
       <div className="w-full max-w-6xl">
         {/* Heading */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-[#FF6A00] font-semibold mb-6"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-2">
           How Can We Help You Today?
         </h1>
@@ -111,14 +121,14 @@ const HelpCenter = () => {
                   name="fullName"
                   required
                   value={formData.fullName}
-onChange={(e) => {
-  let value = e.target.value
-    .replace(/[^A-Za-z.\s]/g, "") // allow only letters
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase()); // capitalize each word
+                  onChange={(e) => {
+                    let value = e.target.value
+                      .replace(/[^A-Za-z.\s]/g, "") // allow only letters
+                      .toLowerCase()
+                      .replace(/\b\w/g, (char) => char.toUpperCase()); // capitalize each word
 
-  setFormData({ ...formData, fullName: value });
-}}
+                    setFormData({ ...formData, fullName: value });
+                  }}
                   className="w-full mt-2 p-3 border border-orange-400 rounded-md outline-none"
                 />
               </div>

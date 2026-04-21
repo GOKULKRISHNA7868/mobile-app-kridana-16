@@ -1,6 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  deleteDoc,
+  getDoc,
+  addDoc,
+  updateDoc,
+  increment,
+  serverTimestamp,
+  onSnapshot,
+} from "firebase/firestore";
+import { getCurrentUserLocation } from "../utils/location";
 import { db } from "../firebase";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -80,7 +93,8 @@ const Landing = () => {
   const [institutes, setInstitutes] = useState([]);
   const [reels, setReels] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
-
+  const [showCommentsFor, setShowCommentsFor] = useState(null);
+  const [commentsList, setCommentsList] = useState([]);
   const [showReelViewer, setShowReelViewer] = useState(false);
   const [activeReelIndex, setActiveReelIndex] = useState(0);
   const slides = [
@@ -90,12 +104,237 @@ const Landing = () => {
   ];
   const [userLocation, setUserLocation] = useState(null);
 
+  const [suggestedProfiles, setSuggestedProfiles] = useState([]);
+  const [followingIds, setFollowingIds] = useState([]);
+  const [reactionMap, setReactionMap] = useState({});
+
+  const [commentBox, setCommentBox] = useState(null);
+  const [commentText, setCommentText] = useState("");
+  const [commentCounts, setCommentCounts] = useState({});
+  const [likeCounts, setLikeCounts] = useState({});
+  const [dislikeCounts, setDislikeCounts] = useState({});
+  /* ===================================================== */
+  /* ================= FETCH SUGGESTED =================== */
+  /* ===================================================== */
+  const openComments = async (item) => {
+    const mainCol = item.type === "trainer" ? "trainers" : "institutes";
+
+    const snap = await getDocs(collection(db, mainCol, item.id, "comments"));
+
+    const list = snap.docs
+      .map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }))
+      .sort(
+        (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0),
+      );
+
+    setCommentsList(list);
+    setShowCommentsFor(item);
+  };
+  useEffect(() => {
+    const loadSuggested = async () => {
+      const trainerSnap = await getDocs(collection(db, "trainers"));
+      const instituteSnap = await getDocs(collection(db, "institutes"));
+
+      const trainerList = trainerSnap.docs.map((doc) => ({
+        id: doc.id,
+        type: "trainer",
+        ...doc.data(),
+      }));
+
+      const instituteList = instituteSnap.docs.map((doc) => ({
+        id: doc.id,
+        type: "institute",
+        ...doc.data(),
+      }));
+
+      let all = [...trainerList, ...instituteList];
+
+      all = all.map((item) => ({
+        ...item,
+        distance:
+          userLocation && item.latitude && item.longitude
+            ? getDistance(
+                userLocation.lat,
+                userLocation.lng,
+                Number(item.latitude),
+                Number(item.longitude),
+              )
+            : null,
+      }));
+
+      all.sort((a, b) => {
+        if (userLocation) {
+          return (a.distance || 9999) - (b.distance || 9999);
+        }
+        return Number(b.rating || 0) - Number(a.rating || 0);
+      });
+
+      setSuggestedProfiles(all.slice(0, 8));
+    };
+
+    loadSuggested();
+  }, [userLocation]);
+
+  /* ===================================================== */
+  /* ================= LOAD FOLLOWING ==================== */
+  /* ===================================================== */
+
   /* ================= AUTH ================= */
 
   useEffect(() => {
     const auth = getAuth();
     return onAuthStateChanged(auth, setUser);
   }, []);
+  useEffect(() => {
+    if (!user) return;
+
+    const loadFollowing = async () => {
+      const snap = await getDocs(collection(db, "followers"));
+
+      const ids = snap.docs
+        .map((d) => d.data())
+        .filter((x) => x.followerId === user.uid)
+        .map((x) => x.profileId);
+
+      setFollowingIds(ids);
+    };
+
+    loadFollowing();
+  }, [user]);
+
+  /* ===================================================== */
+  /* ================= FOLLOW ============================ */
+  /* ===================================================== */
+
+  const handleFollow = async (profileId) => {
+    if (!user) return alert("Login First");
+
+    const id = `${user.uid}_${profileId}`;
+    const ref = doc(db, "followers", id);
+
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) return;
+
+    await setDoc(ref, {
+      followerId: user.uid,
+      profileId,
+      createdAt: serverTimestamp(),
+    });
+
+    setFollowingIds((prev) => [...prev, profileId]);
+  };
+
+  /* ===================================================== */
+  /* ================= LIKE / DISLIKE ==================== */
+  /* ===================================================== */
+
+  const handleReaction = async (item, type) => {
+    if (!user) return alert("Login First");
+
+    const mainCol = item.type === "trainer" ? "trainers" : "institutes";
+
+    const reactionRef = doc(db, mainCol, item.id, "reactions", user.uid);
+
+    const snap = await getDoc(reactionRef);
+    const oldType = snap.exists() ? snap.data().type : null;
+
+    // SAME CLICK = REMOVE
+    if (oldType === type) {
+      await deleteDoc(reactionRef);
+      setReactionMap((p) => ({ ...p, [item.id]: null }));
+    } else {
+      // NEW / SWITCH
+      await setDoc(reactionRef, {
+        uid: user.uid,
+        type,
+        createdAt: serverTimestamp(),
+      });
+
+      setReactionMap((p) => ({
+        ...p,
+        [item.id]: type,
+      }));
+    }
+
+    // 🔥 RECALCULATE COUNTS
+    const allSnap = await getDocs(
+      collection(db, mainCol, item.id, "reactions"),
+    );
+
+    let likes = 0;
+    let dislikes = 0;
+
+    allSnap.forEach((d) => {
+      const t = d.data().type;
+
+      if (t === "like") likes++;
+      if (t === "dislike") dislikes++;
+    });
+
+    await updateDoc(doc(db, mainCol, item.id), {
+      likeCount: likes,
+      dislikeCount: dislikes,
+    });
+  };
+  /* ===================================================== */
+  /* ================= COMMENT =========================== */
+  /* ===================================================== */
+
+  const submitComment = async (item) => {
+    if (!user) return alert("Login First");
+    if (!commentText.trim()) return;
+
+    const mainCol = item.type === "trainer" ? "trainers" : "institutes";
+
+    await addDoc(collection(db, mainCol, item.id, "comments"), {
+      uid: user.uid,
+      text: commentText,
+      createdAt: serverTimestamp(),
+    });
+
+    await updateDoc(doc(db, mainCol, item.id), {
+      commentCount: increment(1),
+    });
+
+    setCommentText("");
+    setCommentBox(null);
+  };
+
+  /* ===================================================== */
+  /* ================= LIVE COUNTS ======================= */
+  /* ===================================================== */
+
+  useEffect(() => {
+    const unsubs = suggestedProfiles.map((item) => {
+      const mainCol = item.type === "trainer" ? "trainers" : "institutes";
+
+      return onSnapshot(doc(db, mainCol, item.id), (snap) => {
+        const data = snap.data();
+
+        setLikeCounts((p) => ({
+          ...p,
+          [item.id]: data?.likeCount || 0,
+        }));
+
+        setDislikeCounts((p) => ({
+          ...p,
+          [item.id]: data?.dislikeCount || 0,
+        }));
+
+        setCommentCounts((p) => ({
+          ...p,
+          [item.id]: data?.commentCount || 0,
+        }));
+      });
+    });
+
+    return () => unsubs.forEach((u) => u());
+  }, [suggestedProfiles]);
+
   /* ================= FETCH TRAINERS + INSTITUTES ================= */
   useEffect(() => {
     const fetchData = async () => {
@@ -127,14 +366,12 @@ const Landing = () => {
   /* ================= LOCATION ================= */
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        setUserLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        }),
-      () => setUserLocation(null),
-    );
+    const loadLocation = async () => {
+      const loc = await getCurrentUserLocation();
+      setUserLocation(loc);
+    };
+
+    loadLocation();
   }, []);
 
   /* ================= FETCH TRAINERS + INSTITUTES ================= */
@@ -341,50 +578,205 @@ const Landing = () => {
       <section className="px-4 py-6 bg-gray-50">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Suggested</h2>
+
           <button className="text-orange-500 text-sm font-semibold">
             See All
           </button>
         </div>
 
-        {/* HORIZONTAL SCROLL WRAPPER */}
         <div className="flex gap-4 overflow-x-auto scrollbar-hide">
-          {[1, 2, 3, 4, 5].map((item) => (
-            <div
-              key={item}
-              className="min-w-[260px] bg-white rounded-xl shadow-sm border"
-            >
-              {/* USER HEADER */}
-              <div className="flex items-center justify-between p-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-                  <div>
-                    <p className="text-sm font-semibold">Sridhar Rao</p>
-                    <p className="text-xs text-gray-500">Martial Arts</p>
+          {suggestedProfiles.map((item) => {
+            const liked = reactionMap[item.id] === "like";
+            const disliked = reactionMap[item.id] === "dislike";
+            const followed = followingIds.includes(item.id);
+
+            const name =
+              item.type === "trainer"
+                ? `${item.firstName || ""} ${item.lastName || ""}`
+                : item.instituteName;
+
+            const category = item.subCategory || item.category || "Sports";
+
+            return (
+              <div
+                key={item.id}
+                className="min-w-[260px] bg-white rounded-xl shadow-sm border"
+              >
+                {/* HEADER */}
+                <div className="flex items-center justify-between p-3">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={item.profileImageUrl}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+
+                    <div>
+                      <p className="text-sm font-semibold line-clamp-1">
+                        {name}
+                      </p>
+                      <p className="text-xs text-gray-500">{category}</p>
+                    </div>
                   </div>
+
+                  <button
+                    onClick={() => handleFollow(item.id)}
+                    disabled={followed}
+                    className={`text-xs px-3 py-1 rounded-full ${
+                      followed
+                        ? "bg-gray-200 text-gray-600"
+                        : "bg-orange-500 text-white"
+                    }`}
+                  >
+                    {followed ? "Following" : "Follow"}
+                  </button>
                 </div>
 
-                <button className="text-xs bg-orange-500 text-white px-3 py-1 rounded-full">
-                  Follow
-                </button>
-              </div>
+                {/* IMAGE */}
+                <div
+                  className="w-full h-52 sm:h-56 md:h-60 bg-gray-100 cursor-pointer overflow-hidden rounded-lg"
+                  onClick={() =>
+                    navigate(
+                      item.type === "trainer"
+                        ? `/trainers/${item.id}`
+                        : `/institutes/${item.id}`,
+                    )
+                  }
+                >
+                  <img
+                    src={item.profileImageUrl}
+                    className="w-full h-full object-contain bg-gray-100"
+                  />
+                </div>
 
-              {/* IMAGE */}
-              <div className="w-full h-52 bg-gray-200"></div>
+                {/* ACTIONS */}
+                <div className="flex items-center gap-4 px-3 py-2 text-lg">
+                  <button
+                    onClick={() => handleReaction(item, "like")}
+                    className={`flex items-center gap-1 ${
+                      liked ? "text-green-500" : "text-gray-400"
+                    }`}
+                  >
+                    👍{" "}
+                    <span className="text-xs">{likeCounts[item.id] || 0}</span>
+                  </button>
 
-              {/* ACTIONS */}
-              <div className="flex gap-4 px-3 py-2 text-gray-400 text-lg">
-                👍 👎 💬
-              </div>
+                  <button
+                    onClick={() => handleReaction(item, "dislike")}
+                    className={`flex items-center gap-1 ${
+                      disliked ? "text-red-500" : "text-gray-400"
+                    }`}
+                  >
+                    👎{" "}
+                    <span className="text-xs">
+                      {dislikeCounts[item.id] || 0}
+                    </span>
+                  </button>
 
-              {/* CAPTION */}
-              <div className="flex items-start gap-2 px-3 pb-3">
-                <div className="w-6 h-6 rounded-full bg-gray-300"></div>
-                <p className="text-xs text-gray-700">
-                  Honoring excellence in training and discipline...
-                </p>
+                  <button
+                    onClick={() => openComments(item)}
+                    className="flex items-center gap-1 text-gray-500 hover:text-orange-500 transition"
+                  >
+                    💬
+                    <span className="text-xs font-medium">
+                      {commentCounts[item.id] || 0}
+                    </span>
+                  </button>
+                </div>
+
+                {/* MOBILE PROFESSIONAL COMMENT SHEET */}
+                {showCommentsFor?.id === item.id && (
+                  <div className="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center">
+                    <div
+                      className="
+    bg-white w-full md:w-[450px]
+    rounded-t-3xl md:rounded-2xl
+    shadow-2xl flex flex-col
+    animate-slideUp
+    max-h-[calc(100vh-90px)]
+    md:max-h-[85vh]
+    pb-[env(safe-area-inset-bottom)]
+    mb-16 md:mb-0
+  "
+                    >
+                      {/* TOP BAR */}
+                      <div className="sticky top-0 bg-white border-b px-4 py-3 rounded-t-3xl">
+                        <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-3"></div>
+
+                        <div className="flex justify-between items-center">
+                          <h3 className="font-semibold text-lg">
+                            Comments ({commentCounts[item.id] || 0})
+                          </h3>
+
+                          <button
+                            onClick={() => setShowCommentsFor(null)}
+                            className="text-gray-500 text-xl"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* COMMENTS LIST */}
+                      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+                        {commentsList.length === 0 ? (
+                          <div className="text-center text-sm text-gray-500 py-10">
+                            No comments yet
+                          </div>
+                        ) : (
+                          commentsList.map((c) => (
+                            <div
+                              key={c.id}
+                              className="bg-gray-50 border rounded-2xl px-3 py-2"
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-sm font-semibold text-orange-500">
+                                  {c.name?.charAt(0) || "U"}
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-800">
+                                    {c.name || "User"}
+                                  </p>
+
+                                  <p className="text-sm text-gray-700 break-words">
+                                    {c.text}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* INPUT BOX */}
+                      <div className="border-t bg-white p-3">
+                        <div className="flex items-end gap-2">
+                          <textarea
+                            rows="1"
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            placeholder="Write a comment..."
+                            className="flex-1 resize-none border rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 max-h-28 overflow-y-auto"
+                          />
+
+                          <button
+                            onClick={() => submitComment(item)}
+                            className="bg-orange-500 text-white px-4 py-2 rounded-2xl text-sm font-medium active:scale-95 transition"
+                          >
+                            Send
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* CAPTION */}
+                <div className="px-3 pb-3 text-xs text-gray-600">
+                  Rated {item.rating || 0} ⭐
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -735,6 +1127,7 @@ const Landing = () => {
           ))}
         </div>
       </section>
+
       {/* ================================================= */}
       {/* ================= SPOTLIGHT REELS ================ */}
       {/* ================================================= */}

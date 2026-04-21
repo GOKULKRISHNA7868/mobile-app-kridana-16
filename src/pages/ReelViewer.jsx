@@ -86,7 +86,7 @@ const ReelViewer = () => {
         const ownerName =
           data.trainerName ||
           data.name ||
-          data.fullName ||
+          data.firstName ||
           data.displayName ||
           data.userName ||
           "Trainer";

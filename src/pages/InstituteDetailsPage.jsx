@@ -3,28 +3,29 @@ import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
 import {
   collection,
+  doc,
   getDocs,
   query,
   where,
-  doc,
-  getDoc,
-  updateDoc,
   setDoc,
-  serverTimestamp,
+  deleteDoc,
   onSnapshot,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
+import { getDoc } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
-  MapPin,
-  Phone,
-  Mail,
-  Users,
-  UserCheck,
-  Calendar,
-  Building2,
-  Star,
+  Heart,
   MessageCircle,
+  Eye,
+  Share2,
+  Phone,
+  Users,
+  Trophy,
+  Award,
+  Briefcase,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -33,10 +34,117 @@ export default function InstituteDetailsPage() {
   const navigate = useNavigate();
 
   const [inst, setInst] = useState(null);
-  const [feedbacks, setFeedbacks] = useState([]);
-  const [showMore, setShowMore] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
-  /* ================= LOAD INSTITUTE ================= */
+  const [mediaPosts, setMediaPosts] = useState([]);
+
+  // ================= FETCH MEDIA FROM FIREBASE =================
+
+  const [pageLoading, setPageLoading] = useState(true);
+
+  // ================= FETCH INSTITUTE =================
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setPageLoading(true);
+
+        const ref = doc(db, "institutes", id);
+        const snap = await getDoc(ref);
+
+        if (snap.exists()) {
+          const data = { id: snap.id, ...snap.data() };
+          setInst(data);
+
+          const posts = [];
+
+          // images
+          if (
+            data.mediaGallery?.trainingImages &&
+            Array.isArray(data.mediaGallery.trainingImages)
+          ) {
+            data.mediaGallery.trainingImages.forEach((url, i) => {
+              posts.push({
+                id: `post_${id}_img_${i}`,
+                postId: `post_${id}_img_${i}`,
+                type: "image",
+                url,
+                title: "Training Session",
+              });
+            });
+          }
+
+          // reels
+          if (data.reels && Array.isArray(data.reels)) {
+            data.reels.forEach((url, i) => {
+              posts.push({
+                id: `${data.role || "institute"}_${id}_${i}`, // correct reelId
+                type: "video",
+                url,
+                title: "Practice Reel",
+              });
+            });
+          }
+
+          setMediaPosts(posts);
+        } else {
+          setInst({});
+        }
+      } catch (error) {
+        console.log(error);
+        setInst({});
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    if (id) loadData();
+  }, [id]);
+
+  // ================= LOADING FIX =================
+
+  // ================= VIEW SAVE =================
+  const handleView = async (postId) => {
+    const user = auth.currentUser;
+
+    if (!user) return;
+
+    const refId = `${postId}_${user.uid}`;
+
+    await setDoc(doc(db, "postviews", refId), {
+      postId,
+      userId: user.uid,
+      createdAt: serverTimestamp(),
+    });
+  };
+
+  // ================= LIKE TOGGLE =================
+  const toggleLike = async (postId) => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
+    const likeId = `${postId}_${user.uid}`;
+    const likeRef = doc(db, "postlikes", likeId);
+
+    const q = query(
+      collection(db, "postlikes"),
+      where("__name__", "==", likeId),
+    );
+
+    const snap = await getDocs(q);
+
+    if (!snap.empty) {
+      await deleteDoc(likeRef);
+    } else {
+      await setDoc(likeRef, {
+        postId,
+        userId: user.uid,
+        createdAt: serverTimestamp(),
+      });
+    }
+  };
   useEffect(() => {
     const load = async () => {
       const snap = await getDoc(doc(db, "institutes", id));
@@ -45,18 +153,6 @@ export default function InstituteDetailsPage() {
     load();
   }, [id]);
 
-  /* ================= LOAD FEEDBACKS ================= */
-  useEffect(() => {
-    const loadFeedbacks = async () => {
-      const q = query(
-        collection(db, "feedbacks"),
-        where("instituteId", "==", id),
-      );
-      const snap = await getDocs(q);
-      setFeedbacks(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    };
-    loadFeedbacks();
-  }, [id]);
   useEffect(() => {
     if (!id) return;
 
@@ -68,7 +164,8 @@ export default function InstituteDetailsPage() {
 
     return () => unsub();
   }, [id]);
-  const handleRating = async (star) => {
+
+  const startChat = async () => {
     const user = auth.currentUser;
 
     if (!user) {
@@ -76,80 +173,8 @@ export default function InstituteDetailsPage() {
       return;
     }
 
-    if (!inst) return;
-
-    const userId = user.uid;
-    const alreadyRated = inst.ratingsByUser?.[userId];
-
-    // ✅ Already rated once
-    if (alreadyRated) {
-      alert("You already submitted your rating.");
-      return;
-    }
-
-    try {
-      const docRef = doc(db, "institutes", id);
-      const snap = await getDoc(docRef);
-
-      if (!snap.exists()) return;
-
-      const data = snap.data();
-
-      const currentRatings = data.ratingsByUser || {};
-
-      // ✅ Double check from Firebase
-      if (currentRatings[userId]) {
-        alert("You already submitted your rating.");
-        return;
-      }
-
-      const currentCount = data.ratingCount || 0;
-      const currentAvg = data.rating || 0;
-
-      const newCount = currentCount + 1;
-      const newAvg = (currentAvg * currentCount + star) / newCount;
-
-      await updateDoc(docRef, {
-        rating: Number(newAvg.toFixed(1)),
-        ratingCount: newCount,
-        [`ratingsByUser.${userId}`]: star,
-      });
-
-      // ✅ Update UI instantly
-      setInst((prev) => ({
-        ...prev,
-        rating: Number(newAvg.toFixed(1)),
-        ratingCount: newCount,
-        ratingsByUser: {
-          ...(prev.ratingsByUser || {}),
-          [userId]: star,
-        },
-      }));
-
-      alert("Thank you for your feedback!");
-    } catch (error) {
-      console.error(error);
-      alert("Rating failed");
-    }
-  };
-  if (!inst) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        Loading Institute...
-      </div>
-    );
-  }
-
-  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(
-    `${inst.city}, ${inst.state}, ${inst.country}`,
-  )}&output=embed`;
-
-  /* ================= CHAT ================= */
-  const startChat = async () => {
-    const user = auth.currentUser;
-    if (!user) return alert("Login required");
-
     const chatId = [user.uid, inst.id].sort().join("_");
+
     await setDoc(
       doc(db, "chats", chatId),
       {
@@ -163,240 +188,493 @@ export default function InstituteDetailsPage() {
     navigate(`/chat/${chatId}`);
   };
 
+  if (!inst) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Loading...
+      </div>
+    );
+  }
+
+  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(
+    `${inst.city || "Bengaluru"}, ${inst.state || "Karnataka"}`,
+  )}&output=embed`;
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-white">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#FF6B00] border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  // ================= NO DATA =================
+  if (!inst || Object.keys(inst).length === 0) {
+    return (
+      <div className="min-h-screen flex justify-center items-center text-gray-500">
+        No Institute Found
+      </div>
+    );
+  }
   return (
-    <div className="min-h-screen bg-white">
-      {/* ================= HERO ================= */}
-      <div className="relative h-64 md:h-80 w-full">
-        <img
-          src={inst.coverImage || inst.profileImageUrl}
-          className="w-full h-full object-cover"
-        />
-
-        <div className="absolute inset-0 bg-black/40" />
-
+    <div className="min-h-screen bg-[#FAFAFA] flex justify-center px-3 pt-4 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-6">
+      <div className="w-full max-w-md">
         {/* BACK */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 z-20 text-[#FF6A00] flex items-center gap-2"
+          className="mb-4 flex items-center gap-2 text-[#FF6B00] font-medium"
         >
           <ArrowLeft size={18} />
           Back
         </button>
 
-        {/* ================= GLASS CARD ================= */}
+        {/* PROFILE CARD */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="-mt-20 mx-4 relative z-10 bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl border p-5"
+          className="bg-white rounded-3xl shadow-sm p-4"
         >
-          {/* LOGO */}
-          <div className="flex flex-col items-center">
+          <div className="flex items-start gap-3">
             <img
-              src={inst.profileImageUrl}
-              className="w-24 h-24 rounded-full border-4 border-[#FF6A00] -mt-14 shadow-lg"
+              src={
+                inst.profileImageUrl ||
+                "https://via.placeholder.com/100x100.png?text=Profile"
+              }
+              alt=""
+              className="w-16 h-16 rounded-full object-cover"
             />
 
-            <h1 className="text-xl font-bold mt-3 text-center">
-              {inst.instituteName}
-            </h1>
+            <div className="flex-1">
+              <h1 className="text-lg font-bold text-gray-900">
+                {inst.instituteName || "Vivek Vardhan"}
+              </h1>
+              <p className="text-sm text-gray-500">
+                {inst.category || "Cricketer"}
+              </p>
+            </div>
 
-            <p className="text-gray-600 text-sm">
-              {inst.city}, {inst.state}
-            </p>
+            <div className="bg-orange-50 text-[#FF6B00] text-[10px] px-2 py-1 rounded-full font-semibold">
+              LIC-2345
+            </div>
           </div>
 
-          {/* ================= STATS ================= */}
-          <div className="grid grid-cols-5 gap-2 mt-5 text-center">
-            <Stat label="Students" value={inst.customers?.length || 0} />
-            <Stat label="Trainers" value={inst.trainers?.length || 0} />
-            <Stat label="Followers" value={followersCount} />
-            <Stat label="Rating" value={inst.rating?.toFixed(1) || "0"} />
-            <Stat label="Year" value={inst.yearFounded || "-"} />
-          </div>
-
-          {/* ================= ACTIONS (MOBILE FRIENDLY) ================= */}
+          {/* ACTION BUTTONS */}
           <div className="grid grid-cols-3 gap-2 mt-5">
-            <a href={`tel:${inst.phoneNumber}`} className="btn">
+            <button
+              onClick={startChat}
+              className="border border-[#FF6B00] text-[#FF6B00] py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-1"
+            >
+              <MessageCircle size={15} />
+              Chat
+            </button>
+
+            <a
+              href={`tel:${inst.phoneNumber || "9999999999"}`}
+              className="border border-[#FF6B00] text-[#FF6B00] py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-1"
+            >
+              <Phone size={15} />
               Call
             </a>
 
-            <a href={`mailto:${inst.email}`} className="btn-outline">
-              Email
-            </a>
-
-            <button onClick={startChat} className="btn-outline">
-              Chat
+            <button className="bg-[#FF6B00] text-white py-2 rounded-xl text-sm font-semibold">
+              Book Slot
             </button>
           </div>
+
+          {/* STATS */}
+          <div className="grid grid-cols-4 gap-2 mt-5">
+            <StatCard
+              icon={Users}
+              label="Students"
+              value={`${inst.customers?.length || 100}+`}
+            />
+            <StatCard
+              icon={Heart}
+              label="Followers"
+              value={`${followersCount || 1000}+`}
+            />
+            <StatCard icon={Trophy} label="Awards" value="20+" />
+            <StatCard icon={Briefcase} label="Exp" value="5Y" />
+          </div>
         </motion.div>
-      </div>
 
-      {/* ================= ABOUT =================
-      {/* ================= ACTIONS + RATING COMBINED ================= */}
-<div className="mt-5 space-y-4">
-  {/* ACTION BUTTONS */}
-  <div className="grid grid-cols-3 gap-2">
-    <a href={`tel:${inst.phoneNumber}`} className="btn">
-      Call
-    </a>
-
-    <a href={`mailto:${inst.email}`} className="btn-outline">
-      Email
-    </a>
-
-    <button onClick={startChat} className="btn-outline">
-      Chat
-    </button>
-  </div>
-
-  {/* SIMPLE PROFESSIONAL RATING */}
-  <div className="text-center">
-    <p className="text-sm font-semibold text-gray-700 mb-2">
-      Rate this Institute
-    </p>
-
-    <div className="flex justify-center gap-1">
-      {[1, 2, 3, 4, 5].map((s) => {
-        const userRating =
-          inst.ratingsByUser?.[auth.currentUser?.uid] || 0;
-
-        return (
-          <span
-            key={s}
-            onClick={() => handleRating(s)}
-            className={`text-2xl cursor-pointer transition duration-200 ${
-              userRating >= s
-                ? "text-yellow-400"
-                : "text-gray-300 hover:text-yellow-300"
-            }`}
-          >
-            ★
-          </span>
-        );
-      })}
-    </div>
-
-    <p className="text-xs text-gray-500 mt-2">
-      {inst.rating?.toFixed(1) || "0.0"} ⭐ •{" "}
-      {inst.ratingCount || 0} Reviews
-    </p>
-
-    {inst.ratingsByUser?.[auth.currentUser?.uid] && (
-      <p className="text-green-600 text-xs mt-1 font-medium">
-        Thank you for your feedback
-      </p>
-    )}
-  </div>
-</div> */}
-      <Section title="About Institute">
-        <p className="bg-[#FFF7F2] p-4 rounded-2xl text-gray-700">
-          {inst.description || "No description available"}
-        </p>
-      </Section>
-
-      {/* ================= DETAILS ================= */}
-      <Section title="Details">
-        <GridItem icon={MapPin} label="Location" value={inst.city} />
-        <GridItem
-          icon={Users}
-          label="Students"
-          value={inst.customers?.length}
-        />
-        <GridItem
-          icon={UserCheck}
-          label="Trainers"
-          value={inst.trainers?.length}
-        />
-        <GridItem icon={Calendar} label="Founded" value={inst.yearFounded} />
-      </Section>
-
-      {/* ================= MORE ================= */}
-      <div className="px-4">
-        <button
-          onClick={() => setShowMore(!showMore)}
-          className="text-[#FF6A00] font-semibold"
-        >
-          {showMore ? "Show Less" : "View More"}
-        </button>
-      </div>
-
-      {showMore && (
-        <Section title="Additional Info">
-          <GridItem icon={Building2} label="Founder" value={inst.founderName} />
-          <GridItem icon={Star} label="Designation" value={inst.designation} />
-          <GridItem icon={Mail} label="Email" value={inst.email} />
-          <GridItem icon={Phone} label="Phone" value={inst.phoneNumber} />
+        {/* MAP */}
+        <Section title="Location">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <iframe
+              title="map"
+              src={mapSrc}
+              className="w-full h-52 border-0"
+              loading="lazy"
+            />
+          </div>
         </Section>
-      )}
 
-      {/* ================= MAP ================= */}
-      <Section title="Location">
-        <iframe src={mapSrc} className="w-full h-64 rounded-2xl" />
-      </Section>
+        {/* ABOUT */}
+        <Section title="About">
+          <div className="bg-orange-50 rounded-2xl p-4 text-sm text-gray-600 leading-6">
+            Lorem Ipsum is simply dummy text of the printing and typesetting
+            industry. Lorem Ipsum has been the industry's standard dummy text.
+          </div>
+        </Section>
 
-      {/* ================= FEEDBACK ================= */}
-      <Section title="Reviews">
-        <div className="grid md:grid-cols-2 gap-4">
-          {feedbacks.map((f) => (
-            <div key={f.id} className="p-4 border rounded-2xl">
-              <p className="font-semibold">{f.name}</p>
-              <p className="text-gray-600 text-sm">{f.message}</p>
+        {/* ACHIEVEMENTS */}
+        <Section title="Achievements">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4">
+            <AchievementRow title="District" g="5" s="3" b="2" />
+            <AchievementRow title="State" g="3" s="2" b="1" />
+            <AchievementRow title="National" g="1" s="1" b="0" />
+          </div>
+        </Section>
+
+        {/* MEDIA */}
+        <Section title="Media & Gallery">
+          {mediaPosts.length === 0 ? (
+            <div className="bg-white p-6 rounded-2xl text-center text-gray-400">
+              No Media Available
             </div>
-          ))}
-        </div>
-      </Section>
+          ) : (
+            <div className="space-y-4">
+              {mediaPosts.map((post) => (
+                <MediaCard
+                  key={post.id}
+                  post={post}
+                  onLike={toggleLike}
+                  onView={handleView}
+                />
+              ))}
+            </div>
+          )}
+        </Section>
+      </div>
     </div>
   );
 }
 
-/* ================= COMPONENTS ================= */
+/* ---------- COMPONENTS ---------- */
+// 🔥 USE THIS MediaCard
+// Reel save format fixed:
+// institute_{profileId}_{index}_{loginUserId}
+// trainer_{profileId}_{index}_{loginUserId}
 
-const Section = ({ title, children }) => (
-  <div className="px-4 md:px-10 mt-10">
-    <h2 className="text-xl font-bold text-[#FF6A00] mb-4">{title}</h2>
-    {children}
-  </div>
-);
+function MediaCard({ post }) {
+  const isReel = post.type === "video";
 
-const Stat = ({ label, value }) => (
-  <div>
-    <div className="w-12 h-12 mx-auto bg-[#FF6A00] text-white rounded-full flex items-center justify-center text-xs font-bold">
-      {value}
+  const [likes, setLikes] = useState(0);
+  const [views, setViews] = useState(0);
+  const [comments, setComments] = useState(0);
+  const [liked, setLiked] = useState(false);
+
+  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [commentList, setCommentList] = useState([]);
+
+  const user = auth.currentUser;
+
+  const itemId = post.id;
+  // ===================================================
+  // MAKE CLEAN REEL ID
+  // ===================================================
+  // Need post.ownerType = institute / trainer
+  // Need post.ownerId = profile id
+  // Need post.index = reel index
+
+  // ===================================================
+  // FETCH COUNTS
+  // ===================================================
+  useEffect(() => {
+    let unsub1, unsub2, unsub3;
+
+    if (isReel) {
+      // LIKE
+      const q1 = query(
+        collection(db, "reelLikes"),
+        where("reelId", "==", itemId),
+      );
+
+      unsub1 = onSnapshot(q1, (snap) => {
+        setLikes(snap.size);
+
+        if (user) {
+          setLiked(snap.docs.some((d) => d.data().userId === user.uid));
+        }
+      });
+
+      // VIEW
+      const q2 = query(
+        collection(db, "reelViews"),
+        where("reelId", "==", itemId),
+      );
+
+      unsub2 = onSnapshot(q2, (snap) => {
+        setViews(snap.size);
+      });
+
+      // COMMENT
+      unsub3 = onSnapshot(
+        collection(db, "reelComments", itemId, "comments"),
+        (snap) => {
+          setComments(snap.size);
+
+          setCommentList(
+            snap.docs.map((d) => ({
+              id: d.id,
+              ...d.data(),
+            })),
+          );
+        },
+      );
+    } else {
+      // IMAGE LIKE
+      const q1 = query(
+        collection(db, "postlikes"),
+        where("postId", "==", itemId),
+      );
+
+      unsub1 = onSnapshot(q1, (snap) => {
+        setLikes(snap.size);
+
+        if (user) {
+          setLiked(snap.docs.some((d) => d.data().userId === user.uid));
+        }
+      });
+
+      // IMAGE VIEW
+      const q2 = query(
+        collection(db, "postviews"),
+        where("postId", "==", itemId),
+      );
+
+      unsub2 = onSnapshot(q2, (snap) => {
+        setViews(snap.size);
+      });
+
+      // IMAGE COMMENT
+      const q3 = query(
+        collection(db, "postcomments"),
+        where("postId", "==", itemId),
+      );
+
+      unsub3 = onSnapshot(q3, (snap) => {
+        setComments(snap.size);
+
+        setCommentList(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+          })),
+        );
+      });
+    }
+
+    return () => {
+      unsub1 && unsub1();
+      unsub2 && unsub2();
+      unsub3 && unsub3();
+    };
+  }, [itemId]);
+
+  // ===================================================
+  // LIKE
+  // ===================================================
+  const handleLike = async () => {
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
+    if (isReel) {
+      const docId = `${itemId}_${user.uid}`;
+
+      const ref = doc(db, "reelLikes", docId);
+
+      if (liked) {
+        await deleteDoc(ref);
+      } else {
+        await setDoc(ref, {
+          reelId: itemId,
+          userId: user.uid,
+        });
+      }
+    } else {
+      const docId = `${itemId}_${user.uid}`;
+
+      const ref = doc(db, "postlikes", docId);
+
+      if (liked) {
+        await deleteDoc(ref);
+      } else {
+        await setDoc(ref, {
+          postId: itemId,
+          userId: user.uid,
+        });
+      }
+    }
+  };
+
+  // ===================================================
+  // VIEW
+  // ===================================================
+  const handleView = async () => {
+    if (!user) return;
+
+    if (isReel) {
+      const docId = `${itemId}_${user.uid}`;
+
+      await setDoc(
+        doc(db, "reelViews", docId),
+        {
+          reelId: itemId,
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    } else {
+      const docId = `${itemId}_${user.uid}`;
+
+      await setDoc(
+        doc(db, "postviews", docId),
+        {
+          postId: itemId,
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
+  };
+
+  // ===================================================
+  // COMMENT
+  // ===================================================
+  const sendComment = async () => {
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
+    if (!commentText.trim()) return;
+
+    if (isReel) {
+      await addDoc(collection(db, "reelComments", itemId, "comments"), {
+        text: commentText,
+        userId: user.uid,
+        userName: user.email || "User",
+        createdAt: serverTimestamp(),
+      });
+    } else {
+      await addDoc(collection(db, "postcomments"), {
+        postId: itemId,
+        text: commentText,
+        userId: user.uid,
+        userName: user.email || "User",
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    setCommentText("");
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      {isReel ? (
+        <video
+          src={post.url}
+          controls
+          onPlay={handleView}
+          className="w-full h-56 object-cover"
+        />
+      ) : (
+        <img
+          src={post.url}
+          alt=""
+          onClick={handleView}
+          className="w-full h-56 object-cover"
+        />
+      )}
+
+      <div className="p-4">
+        <div className="flex justify-between text-sm text-gray-500">
+          <button
+            onClick={handleLike}
+            className={`flex gap-1 items-center ${liked ? "text-red-500" : ""}`}
+          >
+            <Heart size={17} fill={liked ? "currentColor" : "none"} />
+            {likes}
+          </button>
+
+          <div className="flex gap-1 items-center">
+            <Eye size={17} />
+            {views}
+          </div>
+
+          <button
+            onClick={() => setShowCommentBox(!showCommentBox)}
+            className="flex gap-1 items-center"
+          >
+            <MessageCircle size={17} />
+            {comments}
+          </button>
+        </div>
+
+        {showCommentBox && (
+          <div className="mt-3">
+            <div className="flex gap-2">
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="flex-1 border px-3 py-2 rounded-lg text-sm"
+                placeholder="Write comment..."
+              />
+
+              <button
+                onClick={sendComment}
+                className="bg-[#FF6B00] text-white px-4 rounded-lg"
+              >
+                Send
+              </button>
+            </div>
+
+            <div className="mt-3 max-h-40 overflow-y-auto space-y-2">
+              {commentList.map((c) => (
+                <div key={c.id} className="bg-gray-100 px-3 py-2 rounded-lg">
+                  <p className="text-xs font-semibold">{c.userName}</p>
+                  <p className="text-sm">{c.text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-    <p className="text-[10px] mt-1 text-gray-700">{label}</p>
-  </div>
-);
-
-const GridItem = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center gap-3 p-3 border rounded-xl">
-    <div className="bg-[#FF6A00] p-2 rounded-full text-white">
-      <Icon size={14} />
-    </div>
-    <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="font-semibold text-sm">{value || "-"}</p>
-    </div>
-  </div>
-);
-
-/* ================= BUTTON STYLE ================= */
-const style = document.createElement("style");
-style.innerHTML = `
-.btn{
-  background:#ff6a00;
-  color:white;
-  padding:10px;
-  border-radius:12px;
-  text-align:center;
-  font-weight:600;
+  );
 }
-.btn-outline{
-  border:1px solid #ff6a00;
-  color:#ff6a00;
-  padding:10px;
-  border-radius:12px;
-  text-align:center;
-  font-weight:600;
+function Section({ title, children }) {
+  return (
+    <div className="mt-5">
+      <h2 className="text-sm font-bold text-gray-800 mb-3 px-1">{title}</h2>
+      {children}
+    </div>
+  );
 }
-`;
-document.head.appendChild(style);
+
+function StatCard({ icon: Icon, label, value }) {
+  return (
+    <div className="bg-gray-100 rounded-xl p-2 text-center">
+      <Icon size={16} className="mx-auto text-[#FF6B00] mb-1" />
+      <p className="text-xs font-semibold text-gray-800">{value}</p>
+      <p className="text-[10px] text-gray-500">{label}</p>
+    </div>
+  );
+}
+
+function AchievementRow({ title, g, s, b }) {
+  return (
+    <div className="grid grid-cols-4 py-2 border-b last:border-none text-sm">
+      <div className="font-medium text-gray-700">{title}</div>
+      <div className="text-yellow-500">🥇 {g}</div>
+      <div className="text-gray-500">🥈 {s}</div>
+      <div className="text-orange-700">🥉 {b}</div>
+    </div>
+  );
+}

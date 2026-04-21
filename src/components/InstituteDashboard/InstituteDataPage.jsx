@@ -13,14 +13,8 @@ const PerformanceDashboard = () => {
   const [fees, setFees] = useState([]);
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const location = useLocation();
-
-  // ✅ FIRST define this
   const passedBranch = location.state?.branch || "";
-
-  // ✅ THEN use it
-  const [selectedBranch, setSelectedBranch] = useState(passedBranch);
   const [stats, setStats] = useState({
     total: 0,
     newStudents: 0,

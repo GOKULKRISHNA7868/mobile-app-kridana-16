@@ -1,4 +1,6 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const Section = ({ title, children }) => (
   <div className="mb-8">
@@ -12,10 +14,18 @@ const Section = ({ title, children }) => (
 );
 
 const PaymentPolicy = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-4xl mx-auto bg-white shadow-md rounded-2xl p-6 md:p-10">
         {/* Header */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-[#FF6A00] font-semibold mb-6"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Payment Policy

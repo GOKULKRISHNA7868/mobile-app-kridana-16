@@ -1,20 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 import {
   Circle,
   Volleyball,
   Footprints,
   Trophy,
   Target,
-  Flag,
   Users,
-  Activity,
   Dribbble,
   Shield,
-  Zap,
-  Gamepad2,
 } from "lucide-react";
+
 const TeamBallPage = () => {
   const navigate = useNavigate();
   const category = "Team Ball Sports";
@@ -29,42 +26,71 @@ const TeamBallPage = () => {
     { name: "Handball", icon: Circle },
     { name: "Rugby", icon: Shield },
     { name: "Futsal", icon: Footprints },
-
     { name: "Field Hockey", icon: Target },
     { name: "Lacrosse", icon: Target },
-
     { name: "Gaelic Football", icon: Footprints },
-
     { name: "Volleyball", icon: Volleyball },
     { name: "Beach Volleyball", icon: Volleyball },
-
     { name: "Sepak Takraw", icon: Circle },
     { name: "Roundnet (Spikeball)", icon: Circle },
-
     { name: "Netball", icon: Circle },
-
     { name: "Cricket", icon: Trophy },
     { name: "Baseball", icon: Circle },
     { name: "Softball", icon: Circle },
-
     { name: "Wheelchair Rugby", icon: Shield },
     { name: "Dodgeball", icon: Circle },
     { name: "Korfball", icon: Users },
   ];
 
   const filteredCategories = categories.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  /* Swipe Back */
+  useEffect(() => {
+    let startX = 0;
+    let endX = 0;
+
+    const handleTouchStart = (e) => {
+      startX = e.changedTouches[0].screenX;
+    };
+
+    const handleTouchEnd = (e) => {
+      endX = e.changedTouches[0].screenX;
+
+      if (endX - startX > 100) {
+        navigate(-1);
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart);
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-[#FFF9F5] px-4 py-6">
       {/* HEADER */}
-      <h1 className="text-2xl font-bold mb-4">Explore Subcategories</h1>
+      <div className="flex items-center gap-3 mb-5">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center active:scale-95"
+        >
+          <ArrowLeft size={20} />
+        </button>
+
+        <h1 className="text-2xl font-bold">Explore Subcategories</h1>
+      </div>
 
       {/* SEARCH */}
       <div className="flex items-center gap-3 mb-6">
         <div className="flex items-center flex-grow bg-white border border-gray-200 rounded-full px-4 py-2">
           <Search size={18} className="text-gray-400 mr-2" />
+
           <input
             type="text"
             placeholder="Search disciplines..."
@@ -74,7 +100,6 @@ const TeamBallPage = () => {
           />
         </div>
 
-        {/* PROFILE ICON */}
         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
           👤
         </div>
@@ -85,7 +110,7 @@ const TeamBallPage = () => {
         {filteredCategories.length} Disciplines Available
       </p>
 
-      {/* GRID (same as martial) */}
+      {/* GRID */}
       <div className="grid grid-cols-3 sm:grid-cols-3 gap-4">
         {filteredCategories.map((item) => (
           <div
@@ -94,11 +119,11 @@ const TeamBallPage = () => {
               setSelectedSubCategory(item.name);
               setShowChoice(true);
             }}
-            className="h-[120px] rounded-2xl bg-white shadow-md flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-lg transition"
+            className="h-[120px] rounded-2xl bg-white shadow-md flex flex-col items-center justify-center gap-2 cursor-pointer hover:shadow-lg transition active:scale-95"
           >
             <item.icon size={26} className="text-[#FF6A00]" />
 
-            <p className="mt-2 text-xs text-gray-700 text-center px-1 font-medium">
+            <p className="text-xs text-gray-700 text-center px-1 font-medium">
               {item.name}
             </p>
           </div>
@@ -108,8 +133,9 @@ const TeamBallPage = () => {
       {/* POPUP */}
       {showChoice && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
-          <div className="bg-white w-full max-w-md rounded-xl p-6 text-center">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 text-center">
             <h2 className="text-xl font-bold mb-2">{category}</h2>
+
             <p className="text-gray-600 mb-6">What are you looking for?</p>
 
             <div className="flex flex-col gap-3">
@@ -117,12 +143,12 @@ const TeamBallPage = () => {
                 onClick={() => {
                   navigate(
                     `/viewtrainers?category=${category}&subCategory=${encodeURIComponent(
-                      selectedSubCategory,
-                    )}`,
+                      selectedSubCategory
+                    )}`
                   );
                   setShowChoice(false);
                 }}
-                className="bg-[#FF6A00] text-white py-3 rounded-md font-semibold active:scale-95"
+                className="bg-[#FF6A00] text-white py-3 rounded-xl font-semibold"
               >
                 Find Trainers
               </button>
@@ -131,12 +157,12 @@ const TeamBallPage = () => {
                 onClick={() => {
                   navigate(
                     `/viewinstitutes?category=${category}&subCategory=${encodeURIComponent(
-                      selectedSubCategory,
-                    )}`,
+                      selectedSubCategory
+                    )}`
                   );
                   setShowChoice(false);
                 }}
-                className="border border-[#FF6A00] text-[#FF6A00] py-3 rounded-md font-semibold active:scale-95"
+                className="border border-[#FF6A00] text-[#FF6A00] py-3 rounded-xl font-semibold"
               >
                 Find Institutes
               </button>

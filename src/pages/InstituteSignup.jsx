@@ -6,6 +6,8 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import React, { useState, useRef } from "react";
+import { ArrowLeft } from "lucide-react";
+
 export default function InstituteSignup() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1, 2, or 3
@@ -18,7 +20,6 @@ export default function InstituteSignup() {
   const [showSubCategory, setShowSubCategory] = useState(false);
   const certificateInputRef = useRef(null);
   const aadhaarInputRef = useRef(null);
-
 
   const inputClass =
     "h-12 px-4 border border-orange-300 rounded-xl bg-white outline-none focus:border-2 focus:border-orange-500 focus:ring-0 transition-all";
@@ -55,9 +56,6 @@ export default function InstituteSignup() {
     latitude: "",
     longitude: "",
     locationFetched: false,
-    
-
-
   });
 
   const categories = [
@@ -105,7 +103,7 @@ export default function InstituteSignup() {
       "Lethwei",
       "Bajiquan",
       "Hung Gar",
-      "Praying Mantis Kung Fu"
+      "Praying Mantis Kung Fu",
     ],
     "Team Ball Sports": [
       "Football / Soccer",
@@ -126,7 +124,7 @@ export default function InstituteSignup() {
       "Softball",
       "Wheelchair Rugby",
       "Dodgeball",
-      "Korfball"
+      "Korfball",
     ],
     "Racket Sports": [
       "Tennis",
@@ -146,7 +144,7 @@ export default function InstituteSignup() {
       "Chaza",
       "Totem Tennis (Swingball)",
       "Matkot",
-      "Jombola"
+      "Jombola",
     ],
     Fitness: [
       "Gym Workout",
@@ -194,7 +192,7 @@ export default function InstituteSignup() {
       "Toad in the Hole",
       "Bat and Trap",
       "Boccia",
-      "Gateball"
+      "Gateball",
     ],
     "Equestrian Sports": [
       "Horse Racing",
@@ -272,7 +270,7 @@ export default function InstituteSignup() {
       "Nutrition",
       "Traditional & Alternative Therapies",
       "Rehabilitation",
-      "Lifestyle Coaching"
+      "Lifestyle Coaching",
     ],
     Dance: [
       "Bharatanatyam",
@@ -379,8 +377,6 @@ export default function InstituteSignup() {
     e.target.value = null;
   };
 
-
-
   const handleCategoryChange = (e) => {
     const selectedCategory = e.target.value;
 
@@ -397,40 +393,39 @@ export default function InstituteSignup() {
     }));
   };
 
-
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     // ✅ Only letters & space
-  if (
-  name === "founderName" ||
-  name === "instituteName" ||
-  name === "designation" ||
-  name === "district" ||
-  name === "state" ||
-  name === "country" ||
-  name === "city" ||
-  name === "street"
-) {
-  let updatedValue = value.replace(/[^A-Za-z\s]/g, "");
+    if (
+      name === "founderName" ||
+      name === "instituteName" ||
+      name === "designation" ||
+      name === "district" ||
+      name === "state" ||
+      name === "country" ||
+      name === "city" ||
+      name === "street"
+    ) {
+      let updatedValue = value.replace(/[^A-Za-z\s]/g, "");
 
-  // ✅ Capitalize each word
-  updatedValue = updatedValue.replace(/\b[a-z]/g, (char) =>
-    char.toUpperCase()
-  );
+      // ✅ Capitalize each word
+      updatedValue = updatedValue.replace(/\b[a-z]/g, (char) =>
+        char.toUpperCase(),
+      );
 
-  setFormData(prev => ({
-    ...prev,
-    [name]: updatedValue,
-  }));
+      setFormData((prev) => ({
+        ...prev,
+        [name]: updatedValue,
+      }));
 
-  return;
-}
+      return;
+    }
 
     // ✅ Phone - Only numbers (max 10)
     if (name === "phoneNumber") {
       const onlyNumbers = value.replace(/[^0-9]/g, "").slice(0, 10);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         phoneNumber: onlyNumbers,
       }));
@@ -440,7 +435,7 @@ export default function InstituteSignup() {
     // ✅ Year Founded - Only 4 digits
     if (name === "yearFounded") {
       const onlyYear = value.replace(/[^0-9]/g, "").slice(0, 4);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         yearFounded: onlyYear,
       }));
@@ -448,7 +443,7 @@ export default function InstituteSignup() {
     }
 
     // Default
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
       locationFetched: false,
@@ -487,8 +482,7 @@ export default function InstituteSignup() {
       if (!formData.yearFounded)
         newErrors.yearFounded = "Year founded is required";
 
-      if (!formData.category)
-        newErrors.category = "Category is required";
+      if (!formData.category) newErrors.category = "Category is required";
 
       if (!formData.subCategory)
         newErrors.subCategory = "Sub category is required";
@@ -496,8 +490,7 @@ export default function InstituteSignup() {
       if (!formData.phoneNumber)
         newErrors.phoneNumber = "Phone number is required";
 
-      if (!formData.email)
-        newErrors.email = "Email is required";
+      if (!formData.email) newErrors.email = "Email is required";
       // Password required
       if (!formData.password) {
         newErrors.password = "Password is required";
@@ -528,22 +521,22 @@ export default function InstituteSignup() {
         newErrors.certifications = "Upload at least one certification";
     }
 
-   if (step === 2) {
-  // ✅ If location is fetched → allow save
-  if (formData.locationFetched) return true;
+    if (step === 2) {
+      // ✅ If location is fetched → allow save
+      if (formData.locationFetched) return true;
 
-  // ❌ Otherwise validate manual entry
-  if (!formData.building) newErrors.building = "Building is required";
-  if (!formData.street) newErrors.street = "Street is required";
-  if (!formData.city) newErrors.city = "City is required";
-  if (!formData.district) newErrors.district = "District is required";
-  if (!formData.state) newErrors.state = "State is required";
-  if (!formData.country) newErrors.country = "Country is required";
-  if (!formData.zipCode) newErrors.zipCode = "Zip code is required";
-}
+      // ❌ Otherwise validate manual entry
+      if (!formData.building) newErrors.building = "Building is required";
+      if (!formData.street) newErrors.street = "Street is required";
+      if (!formData.city) newErrors.city = "City is required";
+      if (!formData.district) newErrors.district = "District is required";
+      if (!formData.state) newErrors.state = "State is required";
+      if (!formData.country) newErrors.country = "Country is required";
+      if (!formData.zipCode) newErrors.zipCode = "Zip code is required";
+    }
     setErrors(newErrors);
-return Object.keys(newErrors).length === 0;
-};
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleNext = () => {
     if (!validateStep()) return;
@@ -606,7 +599,7 @@ return Object.keys(newErrors).length === 0;
         {
           method: "POST",
           body: fd,
-        }
+        },
       );
 
       const data = await res.json();
@@ -615,7 +608,6 @@ return Object.keys(newErrors).length === 0;
 
     return urls;
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -647,10 +639,9 @@ return Object.keys(newErrors).length === 0;
 
       if (formData.certifications?.length) {
         certificateUrls = await uploadCertificatesToCloudinary(
-          formData.certifications
+          formData.certifications,
         );
       }
-
 
       await setDoc(doc(db, "institutes", uid), {
         role: "institute",
@@ -719,7 +710,7 @@ return Object.keys(newErrors).length === 0;
   };
 
   // Progress bar width
- const progressPercentage = (step / 2) * 100;
+  const progressPercentage = (step / 2) * 100;
 
   const handleFetchLocation = async () => {
     if (!navigator.geolocation) {
@@ -735,7 +726,7 @@ return Object.keys(newErrors).length === 0;
 
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
           );
 
           const data = await response.json();
@@ -759,7 +750,6 @@ return Object.keys(newErrors).length === 0;
             locationFetched: true,
           }));
 
-
           // ❌ DO NOT move step automatically
           // setStep(3)  ← removed
         } catch {
@@ -776,18 +766,23 @@ return Object.keys(newErrors).length === 0;
         enableHighAccuracy: true,
         timeout: 8000,
         maximumAge: 0,
-      }
+      },
     );
   };
 
   return (
     <div className="min-h-screen flex justify-center bg-white py-10">
-     <div className="w-full max-w-6xl px-4 sm:px-6 md:px-8 lg:px-0 rounded-md mt-4 mb-10">
-
+      <div className="w-full max-w-6xl px-4 sm:px-6 md:px-8 lg:px-0 rounded-md mt-4 mb-10">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-[#FF6A00] font-semibold mb-6"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
         {/* Header */}
         {/* HEADER WITH PROFILE + TITLE + PROGRESS */}
-       <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-6">
-
+        <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-6">
           {/* LEFT : Upload Logo Circle */}
           <div className="flex flex-col items-center mt-6">
             <div
@@ -795,14 +790,18 @@ return Object.keys(newErrors).length === 0;
               className="w-24 h-24 rounded-full bg-orange-200 flex items-center justify-center cursor-pointer overflow-hidden"
             >
               {profileImage ? (
-                <img src={profileImage} className="w-full h-full object-cover" />
+                <img
+                  src={profileImage}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <Building2 className="w-10 h-10 text-orange-600" />
-
               )}
             </div>
 
-            <span className="text-sm text-orange-500 font-medium mt-2">Upload Logo</span>
+            <span className="text-sm text-orange-500 font-medium mt-2">
+              Upload Logo
+            </span>
 
             <input
               id="logoUpload"
@@ -819,14 +818,15 @@ return Object.keys(newErrors).length === 0;
               Institute’s Registration
             </h2>
 
-          <p className="text-md mt-6">Step {step} to 2</p>
+            <p className="text-md mt-6">Step {step} to 2</p>
 
             <div className="flex gap-4 mt-4 w-full max-w-[580px]">
-            {[1, 2].map((s) => (
+              {[1, 2].map((s) => (
                 <div
                   key={s}
-                  className={`h-3 flex-1 rounded-full ${step >= s ? "bg-orange-500" : "bg-gray-300"
-                    }`}
+                  className={`h-3 flex-1 rounded-full ${
+                    step >= s ? "bg-orange-500" : "bg-gray-300"
+                  }`}
                 />
               ))}
             </div>
@@ -835,22 +835,17 @@ return Object.keys(newErrors).length === 0;
           <div />
         </div>
 
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* STEP 1 */}
           {step === 1 && (
             <div className="animate-fade-in space-y-6">
-
-
-
               {/* Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 md:gap-x-12 gap-y-6 mb-2">
-
-
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold mb-2"
-                  >Institute Name*</label>
+                  <label className="text-sm font-semibold mb-2">
+                    Institute Name*
+                  </label>
                   <input
                     type="text"
                     name="instituteName"
@@ -866,7 +861,9 @@ return Object.keys(newErrors).length === 0;
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold mb-2">Founder Name*</label>
+                  <label className="text-sm font-semibold mb-2">
+                    Founder Name*
+                  </label>
                   <input
                     type="text"
                     name="founderName"
@@ -882,7 +879,9 @@ return Object.keys(newErrors).length === 0;
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold mb-2">Designation*</label>
+                  <label className="text-sm font-semibold mb-2">
+                    Designation*
+                  </label>
                   <input
                     type="text"
                     name="designation"
@@ -937,18 +936,13 @@ return Object.keys(newErrors).length === 0;
                     />
 
                     {/* icon INSIDE box */}
-<button
-  type="button"
-  onClick={() => certificateInputRef.current.click()}
-  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-transparent"
->
-  <img
-    src="/upload.png"
-    alt="upload"
-    className="w-5 h-5"
-  />
-</button>
-
+                    <button
+                      type="button"
+                      onClick={() => certificateInputRef.current.click()}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-transparent"
+                    >
+                      <img src="/upload.png" alt="upload" className="w-5 h-5" />
+                    </button>
 
                     <input
                       id="certUpload"
@@ -971,7 +965,6 @@ return Object.keys(newErrors).length === 0;
                   </p>
                 </div>
 
-
                 {/* Category + Sub Category – SAME ROW */}
                 <div className="flex flex-col relative">
                   <label className="text-sm font-semibold mb-2">
@@ -981,13 +974,14 @@ return Object.keys(newErrors).length === 0;
                   <div
                     onClick={() => setShowCategory(!showCategory)}
                     className={`h-12 px-4 flex items-center justify-between rounded-xl border cursor-pointer bg-white
-    ${showCategory
-                        ? "border-2 border-orange-500"
-                        : "border-orange-300"}
+    ${showCategory ? "border-2 border-orange-500" : "border-orange-300"}
   `}
                   >
-
-                    <span className={formData.category ? "text-black" : "text-gray-400"}>
+                    <span
+                      className={
+                        formData.category ? "text-black" : "text-gray-400"
+                      }
+                    >
                       {formData.category || "Select Category"}
                     </span>
                     <ChevronDown
@@ -1002,10 +996,10 @@ return Object.keys(newErrors).length === 0;
                         <div
                           key={cat}
                           onClick={() => {
-                            setFormData(prev => ({
+                            setFormData((prev) => ({
                               ...prev,
                               category: cat,
-                              subCategory: ""
+                              subCategory: "",
                             }));
                             setShowCategory(false);
                           }}
@@ -1035,13 +1029,15 @@ return Object.keys(newErrors).length === 0;
                       }
                     }}
                     className={`h-12 px-4 flex items-center justify-between rounded-xl border cursor-pointer bg-white
-      ${showSubCategory
-                        ? "border-2 border-orange-500"
-                        : "border-orange-300"}
+      ${showSubCategory ? "border-2 border-orange-500" : "border-orange-300"}
       ${!formData.category ? "opacity-50 cursor-not-allowed" : ""}
     `}
                   >
-                    <span className={formData.subCategory ? "text-black" : "text-gray-400"}>
+                    <span
+                      className={
+                        formData.subCategory ? "text-black" : "text-gray-400"
+                      }
+                    >
                       {formData.subCategory || "Select Sub Category"}
                     </span>
 
@@ -1078,7 +1074,9 @@ return Object.keys(newErrors).length === 0;
                   )}
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold mb-2">Phone Number*</label>
+                  <label className="text-sm font-semibold mb-2">
+                    Phone Number*
+                  </label>
                   <input
                     type="tel"
                     name="phoneNumber"
@@ -1105,14 +1103,14 @@ return Object.keys(newErrors).length === 0;
                     className={`${inputClass} ${errors.instituteName ? "border-red-500" : ""}`}
                   />
                   {errors.email && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.email}
-                    </p>
+                    <p className="text-red-500 text-xs mt-1">{errors.email}</p>
                   )}
                 </div>
                 {/* Password */}
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold mb-2">Create Password*</label>
+                  <label className="text-sm font-semibold mb-2">
+                    Create Password*
+                  </label>
                   <input
                     type="password"
                     name="password"
@@ -1128,7 +1126,9 @@ return Object.keys(newErrors).length === 0;
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold mb-2">Re-Enter Password*</label>
+                  <label className="text-sm font-semibold mb-2">
+                    Re-Enter Password*
+                  </label>
                   <input
                     type="password"
                     name="confirmPassword"
@@ -1142,8 +1142,6 @@ return Object.keys(newErrors).length === 0;
                     </p>
                   )}
                 </div>
-
-
               </div>
             </div>
           )}
@@ -1151,12 +1149,12 @@ return Object.keys(newErrors).length === 0;
           {/* ===== STEP 2 FETCH PAGE (FULL PAGE NOT MODAL) ===== */}
           {step === 2 && showFetchScreen && (
             <div className="animate-fade-in space-y-8">
-
               {/* Inputs layout EXACT like your image */}
               <div className="space-y-6">
-
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold mb-2">Location Name*</label>
+                  <label className="text-sm font-semibold mb-2">
+                    Location Name*
+                  </label>
                   <input
                     type="text"
                     value={`${formData.building} ${formData.street} ${formData.city}`}
@@ -1166,9 +1164,10 @@ return Object.keys(newErrors).length === 0;
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
-
                   <div className="flex flex-col">
-                    <label className="text-sm font-semibold mb-2">Latitude*</label>
+                    <label className="text-sm font-semibold mb-2">
+                      Latitude*
+                    </label>
                     <input
                       type="text"
                       value={formData.latitude || ""}
@@ -1178,7 +1177,9 @@ return Object.keys(newErrors).length === 0;
                   </div>
 
                   <div className="flex flex-col">
-                    <label className="text-sm font-semibold mb-2">Longitude*</label>
+                    <label className="text-sm font-semibold mb-2">
+                      Longitude*
+                    </label>
                     <input
                       type="text"
                       value={formData.longitude || ""}
@@ -1188,7 +1189,6 @@ return Object.keys(newErrors).length === 0;
                   </div>
                 </div>
               </div>
-
 
               {/* Buttons */}
               <div className="flex justify-between pt-8">
@@ -1208,18 +1208,14 @@ return Object.keys(newErrors).length === 0;
                   {fetchingLocation ? "Fetching..." : "Fetch Location"}
                 </button>
               </div>
-
             </div>
           )}
-
 
           {/* STEP 2 */}
           {step === 2 && !showFetchScreen && (
             <div className="animate-fade-in space-y-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-gray-900">
-                  Add Address
-                </h3>
+                <h3 className="text-xl font-bold text-gray-900">Add Address</h3>
 
                 <button
                   type="button"
@@ -1230,7 +1226,6 @@ return Object.keys(newErrors).length === 0;
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2">
-
                 <div className="flex flex-col">
                   <label className="text-sm font-semibold mb-2">
                     Building / Flat / Door Number *
@@ -1259,12 +1254,9 @@ return Object.keys(newErrors).length === 0;
                     value={formData.street}
                     onChange={handleChange}
                     className={`${inputClass} ${errors.instituteName ? "border-red-500" : ""}`}
-
                   />
                   {errors.street && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.street}
-                    </p>
+                    <p className="text-red-500 text-xs mt-1">{errors.street}</p>
                   )}
                 </div>
 
@@ -1293,9 +1285,7 @@ return Object.keys(newErrors).length === 0;
                     className={`${inputClass} ${errors.instituteName ? "border-red-500" : ""}`}
                   />
                   {errors.city && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.city}
-                    </p>
+                    <p className="text-red-500 text-xs mt-1">{errors.city}</p>
                   )}
                 </div>
 
@@ -1318,9 +1308,7 @@ return Object.keys(newErrors).length === 0;
                 </div>
 
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold mb-2">
-                    State *
-                  </label>
+                  <label className="text-sm font-semibold mb-2">State *</label>
                   <input
                     type="text"
                     name="state"
@@ -1329,9 +1317,7 @@ return Object.keys(newErrors).length === 0;
                     className={`${inputClass} ${errors.instituteName ? "border-red-500" : ""}`}
                   />
                   {errors.state && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.state}
-                    </p>
+                    <p className="text-red-500 text-xs mt-1">{errors.state}</p>
                   )}
                 </div>
 
@@ -1370,12 +1356,9 @@ return Object.keys(newErrors).length === 0;
                     </p>
                   )}
                 </div>
-
               </div>
             </div>
-
           )}
-          
 
           {/* ✅ AGREEMENT SECTION */}
           <div className="flex items-start gap-2 text-sm text-gray-700 mt-4">
@@ -1411,10 +1394,8 @@ return Object.keys(newErrors).length === 0;
             </p>
           </div>
 
-
           {/* Navigation Buttons */}
           <div className="flex justify-end gap-6 mt-4">
-
             {step > 1 && (
               <button
                 type="button"
@@ -1425,38 +1406,33 @@ return Object.keys(newErrors).length === 0;
               </button>
             )}
 
-           {step === 1 && (
-  <button
-    type="button"
-    onClick={handleNext}
-    className="bg-orange-500 text-white px-8 py-2 rounded-md font-semibold hover:bg-orange-600"
-  >
-    Next
-  </button>
-)}
+            {step === 1 && (
+              <button
+                type="button"
+                onClick={handleNext}
+                className="bg-orange-500 text-white px-8 py-2 rounded-md font-semibold hover:bg-orange-600"
+              >
+                Next
+              </button>
+            )}
 
-{step === 2 && (
-  <button
-    type="submit"
-   disabled={!agreed || loading || !formData.locationFetched}
-    className="bg-orange-500 text-white px-8 py-2 rounded-md font-semibold hover:bg-orange-600 disabled:opacity-50"
-  >
-    {loading ? "Saving..." : "Save"}
-  </button>
-)}
-
-           
+            {step === 2 && (
+              <button
+                type="submit"
+                disabled={!agreed || loading || !formData.locationFetched}
+                className="bg-orange-500 text-white px-8 py-2 rounded-md font-semibold hover:bg-orange-600 disabled:opacity-50"
+              >
+                {loading ? "Saving..." : "Save"}
+              </button>
+            )}
           </div>
-
         </form>
-
-
-
-
-      </div >
+      </div>
 
       {/* Animation */}
-      < style > {`
+      <style>
+        {" "}
+        {`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
@@ -1464,7 +1440,8 @@ return Object.keys(newErrors).length === 0;
         .animate-fade-in {
           animation: fadeIn 0.3s ease-in-out;
         }
-      `}</style >
-    </div >
+      `}
+      </style>
+    </div>
   );
 }

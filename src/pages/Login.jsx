@@ -8,6 +8,7 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
 
+import { ArrowLeft } from "lucide-react";
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -123,6 +124,15 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 sm:p-8"
       >
+        {" "}
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute left-0 top-4 flex items-center gap-2 
+    text-white bg-black/20 px-3 py-1.5 rounded-md backdrop-blur-sm"
+        >
+          <ArrowLeft size={18} />
+          <span className="text-sm">Back</span>
+        </button>
         {/* Heading */}
         <h2 className="text-2xl sm:text-3xl font-bold text-center text-[#2D1400]">
           Welcome back to Kridana
@@ -130,7 +140,6 @@ export default function Login() {
         <p className="text-center text-gray-500 mt-2">
           Login to continue to your profile
         </p>
-
         {/* Toggle Buttons */}
         <div className="flex mt-6 rounded-lg overflow-hidden border">
           <button className="flex-1 py-2 bg-[#FF6A00] text-white font-semibold">
@@ -140,7 +149,6 @@ export default function Login() {
             Login with OTP
           </button>
         </div>
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           {/* Email */}
@@ -191,7 +199,6 @@ export default function Login() {
             Login
           </button>
         </form>
-
         {/* Footer */}
         <p className="text-center text-[#2D1400] mt-6">
           Don't have an account?{" "}

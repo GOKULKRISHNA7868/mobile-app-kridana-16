@@ -1,60 +1,115 @@
 // src/pages/TrainerDetailsPage.jsx
 import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  where,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { getDoc } from "firebase/firestore";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
-  MapPin,
-  Star,
+  Heart,
+  MessageCircle,
+  Phone,
   Users,
-  Calendar,
-  Award,
-  FileText,
-  CheckCircle,
+  Trophy,
+  Briefcase,
+  Eye,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { setDoc, serverTimestamp } from "firebase/firestore";
-import { Phone, Mail, MessageCircle } from "lucide-react";
-const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0 },
-};
 
 export default function TrainerDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [trainer, setTrainer] = useState(null);
-  const [showMore, setShowMore] = useState(false);
 
+  const [trainer, setTrainer] = useState(null);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [mediaPosts, setMediaPosts] = useState([]);
+
+  // ================= LOAD TRAINER =================
   useEffect(() => {
     const loadTrainer = async () => {
-      const snap = await getDoc(doc(db, "trainers", id));
-      if (snap.exists()) setTrainer({ id: snap.id, ...snap.data() });
+      try {
+        setPageLoading(true);
+
+        const snap = await getDoc(doc(db, "trainers", id));
+
+        if (snap.exists()) {
+          const data = { id: snap.id, ...snap.data() };
+          setTrainer(data);
+
+          const posts = [];
+
+          // photos
+          // photos from mediaGallery.trainingImages
+          if (
+            data.mediaGallery?.trainingImages &&
+            Array.isArray(data.mediaGallery.trainingImages)
+          ) {
+            data.mediaGallery.trainingImages.forEach((url, i) => {
+              posts.push({
+                id: `post_${id}_img_${i}`,
+                type: "image",
+                url,
+                title: "Training Photo",
+              });
+            });
+          }
+
+          // reels/videos
+          if (Array.isArray(data.reels)) {
+            data.reels.forEach((url, i) => {
+              posts.push({
+                id: `trainer_${id}_${i}`,
+                type: "video",
+                url,
+                title: "Trainer Reel",
+              });
+            });
+          }
+
+          setMediaPosts(posts);
+        } else {
+          setTrainer({});
+        }
+      } catch (error) {
+        console.log(error);
+        setTrainer({});
+      } finally {
+        setPageLoading(false);
+      }
     };
+
     loadTrainer();
   }, [id]);
 
-  if (!trainer) {
-    return (
-      <div className="min-h-screen flex justify-center items-center text-xl font-semibold">
-        Loading Trainer Profile...
-      </div>
-    );
-  }
+  // ================= FOLLOWERS =================
+  useEffect(() => {
+    const q = query(collection(db, "followers"), where("profileId", "==", id));
 
-  const stats = [
-    { label: "Students", value: trainer.students?.length || 0 },
-    { label: "Achieve", value: trainer.achievements?.length || 0 },
-    { label: "Exp", value: trainer.experience || "0yrs" },
-    { label: "Foll", value: trainer.followers || 0 },
-  ];
+    const unsub = onSnapshot(q, (snap) => {
+      setFollowersCount(snap.size);
+    });
+
+    return () => unsub();
+  }, [id]);
+
+  // ================= CHAT =================
   const startTrainerChat = async () => {
     const user = auth.currentUser;
 
     if (!user) {
-      alert("Please login to chat with trainer");
-      navigate("/login");
+      alert("Please login first");
       return;
     }
 
@@ -63,251 +118,472 @@ export default function TrainerDetailsPage() {
     await setDoc(
       doc(db, "chats", chatId),
       {
-        type: "individual",
+        type: "trainer",
         members: [user.uid, trainer.id],
-        trainerId: trainer.id,
         createdAt: serverTimestamp(),
-        lastAt: serverTimestamp(),
-        lastMessage: "",
       },
       { merge: true },
     );
 
-    navigate(`/chat/${chatId}`, {
-      state: {
-        chatName:
-          trainer.trainerName ||
-          `${trainer.firstName || ""} ${trainer.lastName || ""}` ||
-          "Trainer",
-        chatType: "trainer",
-      },
-    });
+    navigate(`/chat/${chatId}`);
   };
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-white">
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#FF6B00] border-t-transparent"></div>
+      </div>
+    );
+  }
+
+  if (!trainer || Object.keys(trainer).length === 0) {
+    return (
+      <div className="min-h-screen flex justify-center items-center text-gray-500">
+        No Trainer Found
+      </div>
+    );
+  }
+
+  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(
+    `${trainer.city || "Bengaluru"}, ${trainer.state || "Karnataka"}`,
+  )}&output=embed`;
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* ================= HERO ================= */}
-      <div className="relative w-full h-64 md:h-80">
-        {/* BACK SIDE IMAGE */}
-        <img
-          src={trainer.coverImage || trainer.profileImageUrl}
-          className="w-full h-full object-cover"
-          alt="Cover"
-        />
-
-        {/* Overlay to make white text/buttons pop */}
-        <div className="absolute inset-0 bg-black/30" />
-
+    <div className="min-h-screen bg-[#FAFAFA] flex justify-center px-3 pt-4 pb-[calc(7rem+env(safe-area-inset-bottom))] md:pb-6">
+      <div className="w-full max-w-md">
+        {/* BACK */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 flex items-center gap-2 text-[#FF6A00] font-semibold z-20"
+          className="mb-4 flex items-center gap-2 text-[#FF6B00] font-medium"
         >
           <ArrowLeft size={18} />
           Back
         </button>
 
-        {/* OVERLAPPING CARD WITH GLASS EFFECT */}
+        {/* PROFILE */}
         <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp}
-          /* Change: bg-white -> bg-white/70 
-       Change: added backdrop-blur-md 
-       Change: added border for better glass definition 
-    */
-          className="-mt-20 relative z-10 bg-white/70 backdrop-blur-md mx-4 rounded-3xl p-5 shadow-xl border border-white/30"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-3xl shadow-sm p-4"
         >
-          {/* PROFILE IMAGE SECTION */}
-          <div className="flex flex-col items-center">
+          <div className="flex items-start gap-3">
             <img
-              src={trainer.profileImageUrl}
-              /* Increased size slightly and shadow to pop against the glass */
-              className="w-24 h-24 rounded-full object-cover border-4 border-[#FF6A00] -mt-16 shadow-md"
-              alt="Profile"
+              src={
+                trainer.profileImageUrl ||
+                "https://via.placeholder.com/100x100.png?text=Profile"
+              }
+              className="w-16 h-16 rounded-full object-cover"
+              alt=""
             />
 
-            <h1 className="text-xl font-bold mt-3 text-gray-900 text-center">
-              {trainer.trainerName ||
-                `${trainer.firstName || ""} ${trainer.lastName || ""}`}
-            </h1>
+            <div className="flex-1">
+              <h1 className="text-lg font-bold text-gray-900">
+                {trainer.trainerName ||
+                  `${trainer.firstName || ""} ${trainer.lastName || ""}`}
+              </h1>
 
-            <p className="text-gray-600 text-sm font-medium">
-              {trainer.designation || "Cricketer"}
-            </p>
+              <p className="text-sm text-gray-500">
+                {trainer.designation || "Trainer"}
+              </p>
+            </div>
+
+            <div className="bg-orange-50 text-[#FF6B00] text-[10px] px-2 py-1 rounded-full font-semibold">
+              PRO
+            </div>
           </div>
 
-          {/* ================= STATS CIRCLES ================= */}
-          <div className="grid grid-cols-4 gap-2 text-center mt-6">
-            {stats.map((s, i) => (
-              <div key={i} className="flex flex-col items-center">
-                {/* Circle styling matches your orange brand exactly */}
-                <div className="bg-[#FF6A00] text-white w-14 h-14 flex items-center justify-center rounded-full text-xs font-bold shadow-lg shadow-orange-500/30">
-                  {s.value}
-                </div>
-                <p className="text-[10px] font-bold text-gray-700 mt-2 uppercase tracking-tight">
-                  {s.label}
-                </p>
-              </div>
-            ))}
-          </div>
-          {/* ================= ACTION BUTTONS ================= */}
-          <div className="mt-6 grid grid-cols-3 gap-3">
-            {/* CALL */}
-            {trainer.phoneNumber && (
-              <a
-                href={`tel:${trainer.phoneNumber}`}
-                className="flex items-center justify-center gap-2 bg-[#ff7a00] text-white py-3 rounded-xl font-semibold shadow-md active:scale-95 transition"
-              >
-                <Phone size={16} />
-                Call
-              </a>
-            )}
-
-            {/* EMAIL */}
-            {trainer.email && (
-              <a
-                href={`mailto:${trainer.email}`}
-                className="flex items-center justify-center gap-2 border border-[#ff7a00] text-[#ff7a00] py-3 rounded-xl font-semibold active:scale-95 transition"
-              >
-                <Mail size={16} />
-                Email
-              </a>
-            )}
-
-            {/* CHAT */}
+          {/* ACTION BUTTONS */}
+          <div className="grid grid-cols-3 gap-2 mt-5">
             <button
               onClick={startTrainerChat}
-              className="flex items-center justify-center gap-2 border border-[#ff7a00] text-[#ff7a00] py-3 rounded-xl font-semibold active:scale-95 transition"
+              className="border border-[#FF6B00] text-[#FF6B00] py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-1"
             >
-              <MessageCircle size={16} />
+              <MessageCircle size={15} />
               Chat
             </button>
+
+            <a
+              href={`tel:${trainer.phoneNumber || ""}`}
+              className="border border-[#FF6B00] text-[#FF6B00] py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-1"
+            >
+              <Phone size={15} />
+              Call
+            </a>
+
+            <button className="bg-[#FF6B00] text-white py-2 rounded-xl text-sm font-semibold">
+              Book Slot
+            </button>
+          </div>
+
+          {/* STATS */}
+          <div className="grid grid-cols-4 gap-2 mt-5">
+            <StatCard
+              icon={Users}
+              label="Students"
+              value={`${trainer.students?.length || 0}+`}
+            />
+            <StatCard
+              icon={Heart}
+              label="Followers"
+              value={`${followersCount}+`}
+            />
+            <StatCard icon={Trophy} label="Awards" value="10+" />
+            <StatCard
+              icon={Briefcase}
+              label="Exp"
+              value={trainer.experience || "2Y"}
+            />
           </div>
         </motion.div>
-      </div>
 
-      {/* ================= ABOUT ================= */}
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        variants={fadeUp}
-        className="px-4 md:px-12 mt-20"
-      >
-        <h2 className="font-bold text-lg mb-2">About</h2>
-        <div className="bg-[#FFF7F2] p-4 rounded-2xl text-gray-700 text-sm">
-          {trainer.about ||
-            "Experienced trainer dedicated to improving student performance with structured training programs."}
-        </div>
-      </motion.div>
-
-      {/* ================= DETAILS ================= */}
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        variants={fadeUp}
-        className="px-4 md:px-12 mt-10"
-      >
-        <h2 className="font-bold text-lg mb-4">Details</h2>
-
-        <div className="space-y-4">
-          <Detail
-            icon={MapPin}
-            label="Location"
-            value={trainer.locationName || trainer.city}
-          />
-          <Detail
-            icon={FileText}
-            label="License"
-            value={trainer.license || "—"}
-          />
-          <Detail
-            icon={CheckCircle}
-            label="Designation"
-            value={trainer.designation}
-          />
-
-          {/* EXTRA FIELDS */}
-          {showMore && (
-            <>
-              <Detail
-                icon={Award}
-                label="Organization"
-                value={trainer.organization}
-              />
-              <Detail
-                icon={Users}
-                label="Institute"
-                value={trainer.instituteName}
-              />
-              <Detail
-                icon={Calendar}
-                label="Year Experience"
-                value={trainer.yearExperience}
-              />
-              <Detail
-                icon={FileText}
-                label="Category"
-                value={trainer.category}
-              />
-              <Detail
-                icon={FileText}
-                label="Sub Category"
-                value={trainer.subCategory}
-              />
-              <Detail icon={FileText} label="Email" value={trainer.email} />
-              <Detail
-                icon={FileText}
-                label="Phone"
-                value={trainer.phoneNumber}
-              />
-              <Detail icon={FileText} label="State" value={trainer.state} />
-              <Detail icon={FileText} label="City" value={trainer.city} />
-              <Detail icon={FileText} label="Country" value={trainer.country} />
-            </>
-          )}
-        </div>
-
-        <button
-          onClick={() => setShowMore(!showMore)}
-          className="mt-4 text-[#FF6A00] font-semibold"
-        >
-          {showMore ? "Show Less" : "View More"}
-        </button>
-      </motion.div>
-
-      {/* ================= GALLERY ================= */}
-      <motion.div
-        initial="hidden"
-        whileInView="visible"
-        variants={fadeUp}
-        className="px-4 md:px-12 mt-10 mb-10"
-      >
-        <h2 className="font-bold text-lg mb-4">Gallery</h2>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {(trainer.images || trainer.certifications || []).map((img, i) => (
-            <img
-              key={i}
-              src={img}
-              className="rounded-xl w-full h-32 object-cover"
+        {/* LOCATION */}
+        <Section title="Location">
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <iframe
+              title="map"
+              src={mapSrc}
+              className="w-full h-52 border-0"
+              loading="lazy"
             />
-          ))}
-        </div>
-      </motion.div>
+          </div>
+        </Section>
+
+        {/* ABOUT */}
+        <Section title="About">
+          <div className="bg-orange-50 rounded-2xl p-4 text-sm text-gray-600 leading-6">
+            {trainer.about ||
+              "Professional trainer helping students improve skills with structured coaching."}
+          </div>
+        </Section>
+
+        {/* DETAILS */}
+        <Section title="Trainer Details">
+          <div className="bg-white rounded-2xl p-4 text-sm space-y-2">
+            <p>
+              <b>Category:</b> {trainer.category || "-"}
+            </p>
+            <p>
+              <b>Sub Category:</b> {trainer.subCategory || "-"}
+            </p>
+            <p>
+              <b>Email:</b> {trainer.email || "-"}
+            </p>
+            <p>
+              <b>Phone:</b> {trainer.phoneNumber || "-"}
+            </p>
+            <p>
+              <b>State:</b> {trainer.state || "-"}
+            </p>
+          </div>
+        </Section>
+
+        {/* MEDIA */}
+        <Section title="Media & Gallery">
+          {mediaPosts.length === 0 ? (
+            <div className="bg-white p-6 rounded-2xl text-center text-gray-400">
+              No Media Available
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {mediaPosts.map((post) => (
+                <MediaCard key={post.id} post={post} />
+              ))}
+            </div>
+          )}
+        </Section>
+      </div>
     </div>
   );
 }
 
-/* ================= DETAIL COMPONENT ================= */
-function Detail({ icon: Icon, label, value }) {
+/* ================= MEDIA CARD ================= */
+function MediaCard({ post }) {
+  const isReel = post.type === "video";
+
+  const [likes, setLikes] = useState(0);
+  const [views, setViews] = useState(0);
+  const [comments, setComments] = useState(0);
+  const [liked, setLiked] = useState(false);
+
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [commentList, setCommentList] = useState([]);
+
+  const user = auth.currentUser;
+  const itemId = post.id;
+
+  // ================= FETCH COUNTS =================
+  useEffect(() => {
+    let unsub1, unsub2, unsub3;
+
+    if (isReel) {
+      // reel likes
+      unsub1 = onSnapshot(
+        query(collection(db, "reelLikes"), where("reelId", "==", itemId)),
+        (snap) => {
+          setLikes(snap.size);
+
+          if (user) {
+            setLiked(snap.docs.some((d) => d.data().userId === user.uid));
+          }
+        },
+      );
+
+      // reel views
+      unsub2 = onSnapshot(
+        query(collection(db, "reelViews"), where("reelId", "==", itemId)),
+        (snap) => setViews(snap.size),
+      );
+
+      // reel comments
+      unsub3 = onSnapshot(
+        collection(db, "reelComments", itemId, "comments"),
+        (snap) => {
+          setComments(snap.size);
+
+          setCommentList(
+            snap.docs.map((d) => ({
+              id: d.id,
+              ...d.data(),
+            })),
+          );
+        },
+      );
+    } else {
+      // photo likes
+      unsub1 = onSnapshot(
+        query(collection(db, "postlikes"), where("postId", "==", itemId)),
+        (snap) => {
+          setLikes(snap.size);
+
+          if (user) {
+            setLiked(snap.docs.some((d) => d.data().userId === user.uid));
+          }
+        },
+      );
+
+      // photo views
+      unsub2 = onSnapshot(
+        query(collection(db, "postviews"), where("postId", "==", itemId)),
+        (snap) => setViews(snap.size),
+      );
+
+      // photo comments
+      unsub3 = onSnapshot(
+        query(collection(db, "postcomments"), where("postId", "==", itemId)),
+        (snap) => {
+          setComments(snap.size);
+
+          setCommentList(
+            snap.docs.map((d) => ({
+              id: d.id,
+              ...d.data(),
+            })),
+          );
+        },
+      );
+    }
+
+    return () => {
+      unsub1 && unsub1();
+      unsub2 && unsub2();
+      unsub3 && unsub3();
+    };
+  }, [itemId]);
+
+  // ================= LIKE =================
+  const handleLike = async () => {
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
+    const docId = `${itemId}_${user.uid}`;
+
+    if (isReel) {
+      const ref = doc(db, "reelLikes", docId);
+
+      if (liked) {
+        await deleteDoc(ref);
+      } else {
+        await setDoc(ref, {
+          reelId: itemId,
+          userId: user.uid,
+        });
+      }
+    } else {
+      const ref = doc(db, "postlikes", docId);
+
+      if (liked) {
+        await deleteDoc(ref);
+      } else {
+        await setDoc(ref, {
+          postId: itemId,
+          userId: user.uid,
+        });
+      }
+    }
+  };
+
+  // ================= VIEW =================
+  const handleView = async () => {
+    if (!user) return;
+
+    const docId = `${itemId}_${user.uid}`;
+
+    if (isReel) {
+      await setDoc(
+        doc(db, "reelViews", docId),
+        {
+          reelId: itemId,
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    } else {
+      await setDoc(
+        doc(db, "postviews", docId),
+        {
+          postId: itemId,
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    }
+  };
+
+  // ================= COMMENT =================
+  const sendComment = async () => {
+    if (!user) {
+      alert("Please login first");
+      return;
+    }
+
+    if (!commentText.trim()) return;
+
+    if (isReel) {
+      await addDoc(collection(db, "reelComments", itemId, "comments"), {
+        text: commentText,
+        userId: user.uid,
+        userName: user.email || "User",
+        createdAt: serverTimestamp(),
+      });
+    } else {
+      await addDoc(collection(db, "postcomments"), {
+        postId: itemId,
+        text: commentText,
+        userId: user.uid,
+        userName: user.email || "User",
+        createdAt: serverTimestamp(),
+      });
+    }
+
+    setCommentText("");
+  };
+
   return (
-    <div className="flex items-start gap-3 bg-white p-3 rounded-xl shadow-sm border">
-      <div className="bg-[#FF6A00] p-2 rounded-full text-white">
-        <Icon size={16} />
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      {isReel ? (
+        <video
+          src={post.url}
+          controls
+          onPlay={handleView}
+          className="w-full h-56 object-cover"
+        />
+      ) : (
+        <img
+          src={post.url}
+          onClick={handleView}
+          className="w-full h-56 object-cover"
+          alt=""
+        />
+      )}
+
+      <div className="p-4">
+        <h3 className="font-semibold text-sm text-gray-800">{post.title}</h3>
+
+        <div className="flex justify-between mt-4 text-sm text-gray-500">
+          {/* LIKE */}
+          <button
+            onClick={handleLike}
+            className={`flex gap-1 items-center ${liked ? "text-red-500" : ""}`}
+          >
+            <Heart size={17} fill={liked ? "currentColor" : "none"} />
+            {likes}
+          </button>
+
+          {/* VIEW */}
+          <div className="flex gap-1 items-center">
+            <Eye size={17} />
+            {views}
+          </div>
+
+          {/* COMMENT */}
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="flex gap-1 items-center"
+          >
+            <MessageCircle size={17} />
+            {comments}
+          </button>
+        </div>
+
+        {/* COMMENT BOX */}
+        {showComments && (
+          <div className="mt-4 border-t pt-3">
+            <div className="flex gap-2">
+              <input
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Write comment..."
+                className="flex-1 border rounded-lg px-3 py-2 text-sm"
+              />
+
+              <button
+                onClick={sendComment}
+                className="bg-[#FF6B00] text-white px-4 rounded-lg text-sm"
+              >
+                Send
+              </button>
+            </div>
+
+            <div className="mt-3 max-h-40 overflow-y-auto space-y-2">
+              {commentList.map((c) => (
+                <div key={c.id} className="bg-gray-100 px-3 py-2 rounded-lg">
+                  <p className="text-xs font-semibold">{c.userName}</p>
+                  <p className="text-sm">{c.text}</p>
+                </div>
+              ))}
+
+              {commentList.length === 0 && (
+                <p className="text-xs text-gray-400">No comments yet</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-      <div>
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="font-semibold text-sm text-gray-800">{value || "—"}</p>
-      </div>
+    </div>
+  );
+}
+
+/* ================= UI ================= */
+function Section({ title, children }) {
+  return (
+    <div className="mt-5">
+      <h2 className="text-sm font-bold text-gray-800 mb-3 px-1">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value }) {
+  return (
+    <div className="bg-gray-100 rounded-xl p-2 text-center">
+      <Icon size={16} className="mx-auto text-[#FF6B00] mb-1" />
+      <p className="text-xs font-semibold text-gray-800">{value}</p>
+      <p className="text-[10px] text-gray-500">{label}</p>
     </div>
   );
 }

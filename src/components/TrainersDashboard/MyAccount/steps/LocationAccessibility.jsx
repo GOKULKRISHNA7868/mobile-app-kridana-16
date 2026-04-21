@@ -3,12 +3,15 @@ import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../../../firebase";
 import { useAuth } from "../../../../context/AuthContext";
 
+import { Capacitor } from "@capacitor/core";
+import { Geolocation } from "@capacitor/geolocation";
+
 const LocationAccessibility = ({ setStep }) => {
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [geoLoading, setGeoLoading] = useState(false); // 🔥 new
+  const [geoLoading, setGeoLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullAddress: "",
@@ -17,15 +20,13 @@ const LocationAccessibility = ({ setStep }) => {
     phoneNumber: "",
     email: "",
     website: "",
-
-    // 🔥 new fields
     latitude: "",
     longitude: "",
   });
 
   const [errors, setErrors] = useState({});
 
-  // ================= LOAD DATA =================
+  /* ================= LOAD DATA ================= */
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.uid) {
@@ -50,14 +51,12 @@ const LocationAccessibility = ({ setStep }) => {
             phoneNumber: data?.phoneNumber || "",
             email: data?.email || "",
             website: data?.locationAccessibility?.website || "",
-
-            // 🔥 load geo
             latitude: data?.latitude || "",
             longitude: data?.longitude || "",
           });
         }
       } catch (error) {
-        console.error("Error loading trainer location data:", error);
+        console.error(error);
       }
 
       setLoading(false);
@@ -66,7 +65,7 @@ const LocationAccessibility = ({ setStep }) => {
     fetchData();
   }, [user]);
 
-  // ================= HANDLE CHANGE =================
+  /* ================= INPUT CHANGE ================= */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -81,114 +80,110 @@ const LocationAccessibility = ({ setStep }) => {
     }));
   };
 
-  // ================= GEO LOCATION =================
-  const fetchCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation not supported");
-      return;
-    }
+  /* ================= LOCATION (WEB + APP) ================= */
+  const fetchCurrentLocation = async () => {
+    try {
+      setGeoLoading(true);
 
-    setGeoLoading(true);
+      let lat, lng;
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude.toString();
-        const lng = position.coords.longitude.toString();
+      if (Capacitor.isNativePlatform()) {
+        const permission = await Geolocation.requestPermissions();
 
-        try {
-          // Reverse geocoding
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
-          );
-          const data = await res.json();
-
-          const address = data?.display_name || "";
-
-          setFormData((prev) => ({
-            ...prev,
-            latitude: lat,
-            longitude: lng,
-            fullAddress: address, // 🔥 auto fill
-          }));
-        } catch (err) {
-          console.error("Reverse geocoding error:", err);
-        } finally {
+        if (permission.location !== "granted") {
+          alert("Location permission denied");
           setGeoLoading(false);
+          return;
         }
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        alert("Unable to fetch location");
-        setGeoLoading(false);
-      },
-    );
+
+        const position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 15000,
+        });
+
+        lat = position.coords.latitude;
+        lng = position.coords.longitude;
+      } else {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 15000,
+          });
+        });
+
+        lat = position.coords.latitude;
+        lng = position.coords.longitude;
+      }
+
+      const latStr = lat.toString();
+      const lngStr = lng.toString();
+
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latStr}&lon=${lngStr}`,
+      );
+
+      const data = await res.json();
+
+      const address = data?.display_name || "";
+
+      setFormData((prev) => ({
+        ...prev,
+        latitude: latStr,
+        longitude: lngStr,
+        fullAddress: address,
+      }));
+    } catch (error) {
+      console.error(error);
+      alert("Unable to fetch location");
+    } finally {
+      setGeoLoading(false);
+    }
   };
 
-  // ================= VALIDATION =================
+  /* ================= VALIDATION ================= */
   const validate = () => {
     let newErrors = {};
 
-    const requiredFields = [
-      "fullAddress",
-      "landmark",
-      "distance",
-      "phoneNumber",
-      "email",
-    ];
+    ["fullAddress", "landmark", "distance", "phoneNumber", "email"].forEach(
+      (field) => {
+        if (!formData[field]?.trim()) {
+          newErrors[field] = "Required";
+        }
+      },
+    );
 
-    requiredFields.forEach((field) => {
-      const value = formData[field];
-      if (!value || String(value).trim() === "") {
-        newErrors[field] = "This field is required";
-      }
-    });
-
-    if (formData.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        newErrors.email = "Enter valid email address";
-      }
+    if (formData.phoneNumber && !/^[0-9]{10}$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = "Enter valid 10 digit number";
     }
 
-    if (formData.phoneNumber) {
-      const phoneRegex = /^[0-9]{10}$/;
-      if (!phoneRegex.test(formData.phoneNumber)) {
-        newErrors.phoneNumber = "Enter valid 10 digit number";
-      }
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Enter valid email";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // ================= SAVE =================
+  /* ================= SAVE ================= */
   const handleSave = async () => {
-    if (!user?.uid) {
-      alert("User not logged in");
-      return;
-    }
+    if (!user?.uid) return;
 
-    const isValid = validate();
-    if (!isValid) {
-      alert("Please fill all required details correctly.");
+    if (!validate()) {
+      alert("Please fill all required fields");
       return;
     }
 
     try {
       setSaving(true);
 
-      const docRef = doc(db, "trainers", user.uid);
-
       await setDoc(
-        docRef,
+        doc(db, "trainers", user.uid),
         {
           phoneNumber: formData.phoneNumber,
           email: formData.email,
-
-          // 🔥 required fields exactly as you asked
-          latitude: formData.latitude, // "17.48930115508228"
-          longitude: formData.longitude, // "78.3985042909833"
-          locationName: formData.fullAddress, // same as address string
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+          locationName: formData.fullAddress,
 
           locationAccessibility: {
             fullAddress: formData.fullAddress,
@@ -204,174 +199,113 @@ const LocationAccessibility = ({ setStep }) => {
 
       alert("Saved Successfully!");
     } catch (error) {
-      console.error("Error saving:", error);
-      alert("Error saving data");
+      console.error(error);
+      alert("Save failed");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return <p className="text-gray-500">Loading...</p>;
-  }
-
-  const handleCancel = () => {
-    setFormData({
-      fullAddress: "",
-      landmark: "",
-      distance: "",
-      phoneNumber: "",
-      email: "",
-      website: "",
-      latitude: "",
-      longitude: "",
-    });
-
-    setErrors({});
-  };
+  if (loading) return <p>Loading...</p>;
 
   const inputClass = (field) =>
-    `border ${errors[field] ? "border-red-500" : "border-gray-300"
-    } rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500`;
+    `border ${
+      errors[field] ? "border-red-500" : "border-gray-300"
+    } rounded-md px-3 py-2`;
 
   return (
     <div className="w-full">
-      {/* BACK */}
       <div
         onClick={() => setStep(1)}
-        className="flex items-center gap-2 text-orange-600 font-medium mb-4 cursor-pointer"
+        className="cursor-pointer text-orange-600 mb-4"
       >
         ← Back
       </div>
 
-      <div className="border-b border-gray-300 mb-6"></div>
-
-      {/* TITLE */}
-      <h2 className="text-orange-500 font-semibold text-lg sm:text-xl mb-6">
+      <h2 className="text-orange-500 font-semibold text-xl mb-6">
         Location & Accessibility
       </h2>
 
-      {/* 🔥 GEO BUTTON (UI minimal, no layout change) */}
-      <div className="mb-4">
-        <button
-          type="button"
-          onClick={fetchCurrentLocation}
-          className="text-sm text-orange-600 font-medium"
-        >
-          {geoLoading ? "Fetching location..." : "Use Current Location"}
-        </button>
-      </div>
+      <button
+        onClick={fetchCurrentLocation}
+        className="mb-5 text-orange-600 font-medium"
+      >
+        {geoLoading ? "Fetching location..." : "Use Current Location"}
+      </button>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {/* Full Address */}
-        <div className="flex flex-col sm:col-span-2">
-          <label className="text-sm font-medium mb-2">
-            Full Address <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            name="fullAddress"
-            value={formData.fullAddress}
-            onChange={handleChange}
-            rows={4}
-            className={`${inputClass("fullAddress")} resize-none`}
-          />
-          {errors.fullAddress && (
-            <span className="text-red-500 text-sm mt-1">
-              {errors.fullAddress}
-            </span>
-          )}
-        </div>
+        <textarea
+          rows={4}
+          name="fullAddress"
+          value={formData.fullAddress}
+          onChange={handleChange}
+          className={`${inputClass("fullAddress")} sm:col-span-2`}
+        />
 
-        {[
-          { label: "Land Mark", name: "landmark" },
-          { label: "Distance From User (Auto)", name: "distance" },
-          { label: "Contact Number", name: "phoneNumber" },
-          { label: "E-mail Address", name: "email" },
-        ].map((field) => (
-          <div className="flex flex-col" key={field.name}>
-            <label className="text-sm font-medium mb-2">
-              {field.label} <span className="text-red-500">*</span>
-            </label>
-            <input
-              name={field.name}
-              value={formData[field.name]}
-              maxLength={field.name === "phoneNumber" ? 10 : undefined}
-              onChange={(e) => {
-                let value = e.target.value;
+        <input
+          name="landmark"
+          value={formData.landmark}
+          onChange={handleChange}
+          placeholder="Landmark"
+          className={inputClass("landmark")}
+        />
 
-                if (field.name === "phoneNumber") {
-                  value = value.replace(/\D/g, ""); // allow only numbers
-                }
+        <input
+          name="distance"
+          value={formData.distance}
+          onChange={handleChange}
+          placeholder="Distance"
+          className={inputClass("distance")}
+        />
 
-                setFormData((prev) => ({
-                  ...prev,
-                  [field.name]: value,
-                }));
+        <input
+          name="phoneNumber"
+          value={formData.phoneNumber}
+          onChange={handleChange}
+          placeholder="Phone Number"
+          className={inputClass("phoneNumber")}
+        />
 
-                setErrors((prev) => ({
-                  ...prev,
-                  [field.name]: "",
-                }));
-              }}
-              className={inputClass(field.name)}
-            />
-            {errors[field.name] && (
-              <span className="text-red-500 text-sm mt-1">
-                {errors[field.name]}
-              </span>
-            )}
-          </div>
-        ))}
-        {/* Latitude */}
-        <div className="flex flex-col">
-          <label className="text-sm font-medium mb-2">Latitude</label>
-          <input
-            name="latitude"
-            value={formData.latitude}
-            onChange={handleChange}
-            className={inputClass("latitude")}
-            placeholder="17.48930115508228"
-          />
-        </div>
+        <input
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="Email"
+          className={inputClass("email")}
+        />
 
-        {/* Longitude */}
-        <div className="flex flex-col">
-          <label className="text-sm font-medium mb-2">Longitude</label>
-          <input
-            name="longitude"
-            value={formData.longitude}
-            onChange={handleChange}
-            className={inputClass("longitude")}
-            placeholder="78.3985042909833"
-          />
-        </div>
-        {/* Website */}
-        <div className="flex flex-col sm:col-span-2">
-          <label className="text-sm font-medium mb-2">
-            Website / Social Media Links
-          </label>
-          <input
-            name="website"
-            value={formData.website}
-            onChange={handleChange}
-            className={inputClass("website")}
-          />
-        </div>
+        <input
+          name="latitude"
+          value={formData.latitude}
+          onChange={handleChange}
+          placeholder="Latitude"
+          className={inputClass("latitude")}
+        />
+
+        <input
+          name="longitude"
+          value={formData.longitude}
+          onChange={handleChange}
+          placeholder="Longitude"
+          className={inputClass("longitude")}
+        />
+
+        <input
+          name="website"
+          value={formData.website}
+          onChange={handleChange}
+          placeholder="Website"
+          className={`${inputClass("website")} sm:col-span-2`}
+        />
       </div>
 
-      {/* BUTTONS */}
-      <div className="flex flex-col sm:flex-row justify-end gap-4 mt-8">
-        <button
-          onClick={handleCancel}
-          className="text-orange-600 font-medium hover:text-black transition"
-        >
-          Cancel
-        </button>
+      <div className="flex gap-4 mt-8 justify-end">
+        <button className="text-orange-600">Cancel</button>
 
         <button
           onClick={handleSave}
           disabled={saving}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-md transition disabled:opacity-50"
+          className="bg-orange-500 text-white px-6 py-2 rounded-md"
         >
           {saving ? "Saving..." : "Save Changes"}
         </button>

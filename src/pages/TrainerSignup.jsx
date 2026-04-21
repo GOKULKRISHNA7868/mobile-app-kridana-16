@@ -7,6 +7,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { User } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 
+import { ArrowLeft } from "lucide-react";
 export default function TrainerSignup() {
   const navigate = useNavigate();
   const categories = [
@@ -687,6 +688,13 @@ export default function TrainerSignup() {
       <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 rounded-md mt-4 mb-10">
         {/* HEADER WITH PROFILE + CONTENT BESIDE */}
         {/* HEADER */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-[#FF6A00] font-semibold mb-6"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
         <div className="flex flex-col md:flex-row items-center justify-between mb-10 gap-6">
           {/* LEFT : Upload Profile */}
           {/* LEFT : Upload Profile */}

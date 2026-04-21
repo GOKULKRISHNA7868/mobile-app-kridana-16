@@ -1,35 +1,45 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 const TermsAndConditions = () => {
-  return (
-   <div className="min-h-screen bg-gray-50 py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-10">
+  const navigate = useNavigate();
 
-     <div className="w-full max-w-5xl mx-auto bg-white shadow-lg rounded-2xl p-5 sm:p-6 md:p-10">
+  return (
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8 px-3 sm:px-6 md:px-10">
+      <div className="w-full max-w-5xl mx-auto bg-white shadow-lg rounded-2xl p-4 sm:p-6 md:p-10">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-[#FF6A00] font-semibold mb-6"
+        >
+          <ArrowLeft size={18} />
+          Back
+        </button>
 
         {/* Header */}
-        <div className="text-center mb-8">
-         <h1 className="text-2xl sm:text-3xl md:text-4xl text-orange-500 font-bold text-gray-800 leading-tight">
-
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-xl sm:text-3xl md:text-4xl font-bold text-orange-500 leading-snug">
             Kridhana – Terms & Conditions
           </h1>
-         <p className="text-xs sm:text-sm text-gray-600 mt-2">
 
+          <p className="text-xs sm:text-sm text-gray-600 mt-2">
             Effective Date: From January 31st
           </p>
-         <p className="text-xs sm:text-sm text-gray-600 mt-2">
 
+          <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
             KDASTSHO FINTECH SOLUTIONS <br />
             CIN No: U62099AP2025PTC117393
           </p>
         </div>
 
-       <p className="text-gray-700 text-sm sm:text-base mb-6 leading-relaxed">
-
+        {/* Intro */}
+        <p className="text-gray-700 text-sm sm:text-base mb-6 leading-relaxed text-justify">
           By using Kridhana, you agree to follow these Terms & Conditions. If
           you do not agree, you must stop using the app immediately.
         </p>
 
-        {/* Section Template */}
+        {/* Sections */}
         {[
           {
             title: "1. Platform Purpose",
@@ -169,15 +179,16 @@ const TermsAndConditions = () => {
             ],
           },
         ].map((section, index) => (
-          <div key={index} className="mb-6">
-           <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
-
+          <div key={index} className="mb-6 border-b pb-4 last:border-none">
+            <h2 className="text-base sm:text-xl font-semibold text-gray-800 mb-2">
               {section.title}
             </h2>
-           <ul className="list-disc list-inside space-y-1 text-sm sm:text-base text-gray-700 leading-relaxed">
 
+            <ul className="list-disc pl-5 space-y-2 text-sm sm:text-base text-gray-700 leading-relaxed">
               {section.content.map((item, i) => (
-                <li key={i}>{item}</li>
+                <li key={i} className="text-justify">
+                  {item}
+                </li>
               ))}
             </ul>
           </div>

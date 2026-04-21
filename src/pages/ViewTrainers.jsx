@@ -5,6 +5,8 @@ import { collection, getDocs } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronDown, Filter } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+
 /* 🌍 Distance Formula */
 const getDistanceKm = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
@@ -417,6 +419,13 @@ export default function ViewTrainers() {
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-16 py-12">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 text-[#FF6A00] font-semibold mb-6"
+      >
+        <ArrowLeft size={18} />
+        Back
+      </button>
       <h1 className="text-4xl font-bold text-[#ff7a00] mb-8 hidden md:block">
         Trainers
       </h1>
