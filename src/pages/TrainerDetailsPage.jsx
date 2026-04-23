@@ -37,6 +37,7 @@ export default function TrainerDetailsPage() {
   const [mediaPosts, setMediaPosts] = useState([]);
 
   // ================= LOAD TRAINER =================
+  // ================= LOAD TRAINER =================
   useEffect(() => {
     const loadTrainer = async () => {
       try {
@@ -50,41 +51,60 @@ export default function TrainerDetailsPage() {
 
           const posts = [];
 
-          // photos
-          // photos from mediaGallery.trainingImages
-          if (
-            data.mediaGallery?.trainingImages &&
-            Array.isArray(data.mediaGallery.trainingImages)
-          ) {
-            data.mediaGallery.trainingImages.forEach((url, i) => {
-              posts.push({
-                id: `post_${id}_img_${i}`,
-                type: "image",
-                url,
-                title: "Training Photo",
-              });
-            });
-          }
+          // =========================================
+          // FETCH TRAINING IMAGES
+          // old => ["url1"]
+          // new => [{url,about}]
+          // =========================================
+          const trainingImages = data.trainingImages || [];
+          const mediaTraining = data.mediaGallery?.trainingImages || [];
 
-          // reels/videos
-          if (Array.isArray(data.reels)) {
-            data.reels.forEach((url, i) => {
-              posts.push({
-                id: `trainer_${id}_${i}`,
-                type: "video",
-                url,
-                title: "Trainer Reel",
-              });
+          const allImages = [...trainingImages, ...mediaTraining];
+
+          allImages.forEach((item, i) => {
+            const url = typeof item === "string" ? item : item?.url;
+            const about = typeof item === "string" ? "" : item?.about || "";
+
+            if (!url) return;
+
+            posts.push({
+              id: `post_${id}_img_${i}`,
+              type: "image",
+              url,
+              title: about || "Training Photo",
             });
-          }
+          });
+
+          // =========================================
+          // FETCH REELS
+          // old => ["url.mp4"]
+          // new => [{url,about}]
+          // =========================================
+          const reels = data.reels || [];
+
+          reels.forEach((item, i) => {
+            const url = typeof item === "string" ? item : item?.url;
+            const about = typeof item === "string" ? "" : item?.about || "";
+
+            if (!url) return;
+
+            posts.push({
+              id: `trainer_${id}_${i}`,
+              type: "video",
+              url,
+              title: about || "Trainer Reel",
+            });
+          });
 
           setMediaPosts(posts);
         } else {
           setTrainer({});
+          setMediaPosts([]);
         }
       } catch (error) {
         console.log(error);
         setTrainer({});
+        setMediaPosts([]);
       } finally {
         setPageLoading(false);
       }
@@ -502,9 +522,13 @@ function MediaCard({ post }) {
       )}
 
       <div className="p-4">
-        <h3 className="font-semibold text-sm text-gray-800">{post.title}</h3>
+        {post.title && (
+          <p className="text-sm text-gray-800 leading-6 break-words whitespace-pre-wrap mb-3">
+            {post.title}
+          </p>
+        )}
 
-        <div className="flex justify-between mt-4 text-sm text-gray-500">
+        <div className="flex justify-between text-sm text-gray-500">
           {/* LIKE */}
           <button
             onClick={handleLike}

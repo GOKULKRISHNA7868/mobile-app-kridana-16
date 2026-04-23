@@ -129,7 +129,7 @@ const TrainersDashboard = () => {
         { label: "Customers Attendance", value: "Customers Attendance" },
         { label: "Customer Details", value: "Customer Details" },
         //{ label: "Family Details", value: "Family Details" },
-        { label: "RegisterNumber", value: "RegisterNumber" },
+        //{ label: "RegisterNumber", value: "RegisterNumber" },
         { label: "PaidReceipt", value: "PaidReceipt" },
         { label: "Fees Details", value: "Fees Details" },
         { label: "Performance Reports", value: "Performance Reports" },
@@ -484,7 +484,19 @@ const TrainersDashboard = () => {
   return (
     <div className="h-screen flex bg-gray-700 overflow-hidden relative">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0  z-[60] flex items-center justify-between px-4 py-3 shadow-md">
+      <div
+        className="
+    lg:hidden
+    fixed top-0 left-0 right-0
+    z-[999]
+    flex items-center justify-between
+    px-4 py-3
+    bg-gray-900
+    border-b border-gray-800
+    shadow-lg
+    backdrop-blur-md
+  "
+      >
         <button
           onClick={() => setSidebarOpen(true)}
           className="text-white text-2xl"

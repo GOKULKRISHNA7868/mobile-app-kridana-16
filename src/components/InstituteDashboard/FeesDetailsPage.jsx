@@ -87,10 +87,12 @@ const FeesDetailsPage = () => {
       const list = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .sort((a, b) => {
-          const nameA =
-            `${a.firstName || ""} ${a.lastName || ""}`.toLowerCase();
-          const nameB =
-            `${b.firstName || ""} ${b.lastName || ""}`.toLowerCase();
+          const nameA = `${a.firstName || ""} ${
+            a.lastName || ""
+          }`.toLowerCase();
+          const nameB = `${b.firstName || ""} ${
+            b.lastName || ""
+          }`.toLowerCase();
 
           return nameA.localeCompare(nameB);
         });
@@ -482,90 +484,150 @@ const FeesDetailsPage = () => {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-xl shadow overflow-x-auto">
-        {/* HEADER */}
-        <div className="grid grid-cols-8 min-w-[1000px] bg-black text-orange-500 px-6 py-3 font-semibold text-sm">
-          <div>Student</div>
-          <div>Category</div>
-          <div>SubCategory</div>
-          <div className="text-center">Sessions</div>
-          <div className="text-center">Total</div>
-          <div className="text-center">Paid</div>
-          <div className="text-center">Pending</div>
-          <div className="text-center">Reason</div>
-        </div>
+      {/* ================= TABLE / MOBILE RESPONSIVE ================= */}
+      <div className="bg-white rounded-xl shadow overflow-hidden">
+        {/* DESKTOP / TABLET TABLE */}
+        <div className="hidden lg:block">
+          {/* HEADER */}
+          <div className="grid grid-cols-8 bg-black text-orange-500 px-6 py-3 font-semibold text-sm">
+            <div>Student</div>
+            <div>Category</div>
+            <div>SubCategory</div>
+            <div className="text-center">Sessions</div>
+            <div className="text-center">Total</div>
+            <div className="text-center">Paid</div>
+            <div className="text-center">Pending</div>
+            <div className="text-center">Reason</div>
+          </div>
 
-        {/* ROWS */}
-        {filteredRows.map((row, index) => {
-          const { student, sport } = row;
-          const data = getFeeData(student, sport);
+          {/* ROWS */}
+          {filteredRows.map((row, index) => {
+            const { student, sport } = row;
+            const data = getFeeData(student, sport);
 
-          return (
-            <div
-              key={`${student.id}-${sport.subCategory}`}
-              className="grid grid-cols-8 min-w-[1000px] px-6 py-4 border-t items-center text-sm hover:bg-gray-50 transition"
-            >
-              {/* Student */}
-              <div className="font-medium text-gray-800">
-                <div className="flex items-start gap-1 text-left">
-                  <span className="min-w-[20px] text-gray-600">
-                    {index + 1}.
-                  </span>
-                  <span className="break-words leading-snug">
-                    {student.firstName} {student.lastName}
-                  </span>
+            return (
+              <div
+                key={`${student.id}-${sport.subCategory}`}
+                className="grid grid-cols-8 px-6 py-4 border-t items-center text-sm hover:bg-gray-50 transition"
+              >
+                <div className="font-medium text-gray-800">
+                  {index + 1}. {student.firstName} {student.lastName}
+                </div>
+
+                <div>{sport.category}</div>
+
+                <div>{sport.subCategory}</div>
+
+                <div className="text-center">{student.sessions || "-"}</div>
+
+                <div
+                  onClick={() => handleEditPayment(student, sport)}
+                  className="text-center font-semibold cursor-pointer"
+                >
+                  ₹ {data.total}
+                </div>
+
+                <div
+                  onClick={() => handleEditPayment(student, sport)}
+                  className="text-center text-green-600 font-semibold cursor-pointer"
+                >
+                  ₹ {data.paid}
+                </div>
+
+                <div className="text-center text-red-600 font-semibold">
+                  ₹ {data.pending}
+                </div>
+
+                <div className="text-center">
+                  {data.reason ? (
+                    <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
+                      {data.reason}
+                    </span>
+                  ) : (
+                    "-"
+                  )}
                 </div>
               </div>
-              {/* Category */}
-              <div className="text-gray-700">{sport.category}</div>
+            );
+          })}
+        </div>
 
-              {/* SubCategory */}
-              <div className="text-gray-700">{sport.subCategory}</div>
+        {/* MOBILE CARD VIEW */}
+        <div className="lg:hidden divide-y">
+          {filteredRows.map((row, index) => {
+            const { student, sport } = row;
+            const data = getFeeData(student, sport);
 
-              {/* Sessions */}
-              <div className="text-center text-gray-700">
-                {student.sessions || "-"}
-              </div>
-
-              {/* Total */}
+            return (
               <div
-                className="text-center font-semibold cursor-pointer"
-                onClick={() => handleEditPayment(student, sport)}
+                key={`${student.id}-${sport.subCategory}`}
+                className="p-4 hover:bg-gray-50 transition"
               >
-                ₹ {data.total}
-              </div>
+                {/* Top */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-sm leading-tight">
+                      {index + 1}. {student.firstName} {student.lastName}
+                    </h3>
 
-              {/* Paid */}
-              <div
-                className="text-center text-green-600 font-semibold cursor-pointer"
-                onClick={() => handleEditPayment(student, sport)}
-              >
-                ₹ {data.paid}
-                {data.paidDate !== "-" && (
-                  <span className="block text-xs text-gray-500">
-                    {data.paidDate}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {sport.category} • {sport.subCategory}
+                    </p>
+                  </div>
+
+                  <span className="text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full whitespace-nowrap">
+                    {student.sessions || 0} Sessions
                   </span>
-                )}
-              </div>
+                </div>
 
-              {/* Pending */}
-              <div className="text-center text-red-600 font-semibold">
-                ₹ {data.pending}
-              </div>
+                {/* Amount Grid */}
+                <div className="grid grid-cols-3 gap-2 mt-4">
+                  <button
+                    onClick={() => handleEditPayment(student, sport)}
+                    className="bg-gray-50 rounded-lg p-2 text-center"
+                  >
+                    <p className="text-[11px] text-gray-500">Total</p>
+                    <p className="font-semibold text-gray-900">
+                      ₹ {data.total}
+                    </p>
+                  </button>
 
-              {/* Reason */}
-              <div className="text-center">
-                {data.reason ? (
-                  <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
-                    {data.reason}
+                  <button
+                    onClick={() => handleEditPayment(student, sport)}
+                    className="bg-green-50 rounded-lg p-2 text-center"
+                  >
+                    <p className="text-[11px] text-green-600">Paid</p>
+                    <p className="font-semibold text-green-700">
+                      ₹ {data.paid}
+                    </p>
+                  </button>
+
+                  <div className="bg-red-50 rounded-lg p-2 text-center">
+                    <p className="text-[11px] text-red-500">Pending</p>
+                    <p className="font-semibold text-red-600">
+                      ₹ {data.pending}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bottom Info */}
+                <div className="flex justify-between items-center mt-3 text-xs">
+                  <span className="text-gray-500">
+                    {data.paidDate !== "-"
+                      ? `Paid: ${data.paidDate}`
+                      : "Not Paid"}
                   </span>
-                ) : (
-                  "-"
-                )}
+
+                  {data.reason && (
+                    <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">
+                      {data.reason}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* MODAL */}

@@ -341,62 +341,159 @@ const SalaryDetailsPage = () => {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
-        <div className="grid grid-cols-5 min-w-[700px] bg-black text-orange-500 px-6 py-3 font-semibold">
-          <div>Employee Names</div>
-          <div>Designation</div>
-          <div>Monthly Salary</div>
-          <div>Paid</div>
-          <div>Date</div>
+      {/* TABLE / MOBILE VIEW */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* ================= DESKTOP TABLE ================= */}
+        <div className="hidden md:block">
+          {/* HEADER */}
+          <div className="grid grid-cols-5 bg-black text-orange-500 px-6 py-4 font-semibold text-sm">
+            <div>Employee Names</div>
+            <div>Designation</div>
+            <div>Monthly Salary</div>
+            <div>Paid</div>
+            <div>Date</div>
+          </div>
+
+          {/* ROWS */}
+          {filteredTrainers.map((trainer, index) => {
+            const salaryData = getTrainerSalaryData(trainer);
+
+            return (
+              <div
+                key={trainer.id}
+                onClick={() => setSelectedTrainer(trainer)}
+                className={`grid grid-cols-5 px-6 py-4 border-t items-center text-sm cursor-pointer hover:bg-gray-50 transition ${
+                  selectedTrainer?.id === trainer.id ? "bg-orange-50" : ""
+                }`}
+              >
+                <div className="font-medium text-gray-800">
+                  {index + 1}. {trainer.firstName} {trainer.lastName}
+                </div>
+
+                <div>{trainer.designation || "-"}</div>
+
+                <div className="font-semibold">
+                  ₹ {trainer.monthlySalary || 0}
+                </div>
+
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedTrainer(trainer);
+
+                    if (!selectedMonth) {
+                      alert("Please select a month first!");
+                      return;
+                    }
+
+                    const salaryRecord = salaries.find(
+                      (s) =>
+                        s.trainerId === trainer.id && s.month === selectedMonth,
+                    );
+
+                    setEditData({
+                      monthlySalary: trainer.monthlySalary || "",
+                      paidAmount: salaryRecord?.paidAmount || "",
+                      paidDate: salaryRecord?.paidDate || "",
+                    });
+
+                    setShowEditModal(true);
+                  }}
+                  className="text-green-600 font-semibold cursor-pointer hover:underline"
+                >
+                  ₹ {salaryData.paid}
+                </div>
+
+                <div>{salaryData.date}</div>
+              </div>
+            );
+          })}
         </div>
 
-        {filteredTrainers.map((trainer, index) => {
-          const salaryData = getTrainerSalaryData(trainer);
-          return (
-            <div
-              key={trainer.id}
-              onClick={() => setSelectedTrainer(trainer)}
-              className={`grid grid-cols-5 min-w-[700px] px-6 py-4 border-t items-center cursor-pointer ${
-                selectedTrainer?.id === trainer.id ? "bg-red-100" : ""
-              }`}
-            >
-              <div className="flex items-center">
-                <span className="mr-2">{index + 1}.</span>
-                {trainer.firstName} {trainer.lastName}
-              </div>
-              <div>{trainer.designation}</div>
-              <div>₹ {trainer.monthlySalary || 0}</div>
+        {/* ================= MOBILE CARD VIEW ================= */}
+        <div className="md:hidden divide-y">
+          {filteredTrainers.map((trainer, index) => {
+            const salaryData = getTrainerSalaryData(trainer);
+
+            return (
               <div
-                onClick={(e) => {
-                  e.stopPropagation(); // prevent row selection override
-                  setSelectedTrainer(trainer);
-
-                  if (!selectedMonth) {
-                    alert("Please select a month first!");
-                    return;
-                  }
-
-                  const salaryRecord = salaries.find(
-                    (s) =>
-                      s.trainerId === trainer.id && s.month === selectedMonth,
-                  );
-
-                  setEditData({
-                    monthlySalary: trainer.monthlySalary || "",
-                    paidAmount: salaryRecord?.paidAmount || "",
-                    paidDate: salaryRecord?.paidDate || "",
-                  });
-
-                  setShowEditModal(true);
-                }}
-                className="text-green-600 font-semibold cursor-pointer hover:underline"
+                key={trainer.id}
+                onClick={() => setSelectedTrainer(trainer)}
+                className={`p-4 space-y-3 cursor-pointer transition ${
+                  selectedTrainer?.id === trainer.id
+                    ? "bg-orange-50"
+                    : "bg-white"
+                }`}
               >
-                ₹ {salaryData.paid}
+                {/* TOP */}
+                <div className="flex justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {index + 1}. {trainer.firstName} {trainer.lastName}
+                    </h3>
+
+                    <p className="text-xs text-gray-500 mt-1">
+                      {trainer.designation || "No Designation"}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedTrainer(trainer);
+
+                      if (!selectedMonth) {
+                        alert("Please select a month first!");
+                        return;
+                      }
+
+                      const salaryRecord = salaries.find(
+                        (s) =>
+                          s.trainerId === trainer.id &&
+                          s.month === selectedMonth,
+                      );
+
+                      setEditData({
+                        monthlySalary: trainer.monthlySalary || "",
+                        paidAmount: salaryRecord?.paidAmount || "",
+                        paidDate: salaryRecord?.paidDate || "",
+                      });
+
+                      setShowEditModal(true);
+                    }}
+                    className="text-xs px-3 py-1 rounded-lg border border-orange-400 text-orange-500 font-medium"
+                  >
+                    Edit
+                  </button>
+                </div>
+
+                {/* DETAILS */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <p className="text-xs text-gray-500">Monthly Salary</p>
+                    <p className="font-semibold text-gray-800">
+                      ₹ {trainer.monthlySalary || 0}
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-3">
+                    <p className="text-xs text-gray-500">Paid</p>
+                    <p className="font-semibold text-green-600">
+                      ₹ {salaryData.paid}
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-3 col-span-2">
+                    <p className="text-xs text-gray-500">Paid Date</p>
+                    <p className="font-semibold text-gray-800">
+                      {salaryData.date}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>{salaryData.date}</div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* SAVE & CANCEL */}

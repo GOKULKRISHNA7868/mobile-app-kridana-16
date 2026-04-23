@@ -185,6 +185,23 @@ const Navbar = () => {
       console.error("Logout failed:", error);
     }
   };
+  useEffect(() => {
+    const setBottomGap = () => {
+      if (window.innerWidth < 768) {
+        document.body.style.paddingBottom = "90px"; // space for mobile navbar
+      } else {
+        document.body.style.paddingBottom = "0px";
+      }
+    };
+
+    setBottomGap();
+    window.addEventListener("resize", setBottomGap);
+
+    return () => {
+      window.removeEventListener("resize", setBottomGap);
+      document.body.style.paddingBottom = "0px";
+    };
+  }, []);
 
   return (
     <>
@@ -451,10 +468,10 @@ const Navbar = () => {
                     </button>
 
                     <button
-                      onClick={() => navigate("/payments")}
+                      onClick={() => navigate("/Uploadimages")}
                       className="menu-item"
                     >
-                      Payment Details
+                      Upload images
                     </button>
 
                     <button

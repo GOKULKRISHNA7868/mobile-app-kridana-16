@@ -65,7 +65,7 @@ const sidebarSections = [
     icon: "customers",
     items: [
       "Customers Attendance",
-      "RegisterNumber",
+      //"RegisterNumber",
       "Add Customers",
       "Paid Recipets",
       "Fees Details",

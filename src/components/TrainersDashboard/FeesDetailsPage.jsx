@@ -434,82 +434,144 @@ const FeesDetailsPage = () => {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-xl shadow overflow-x-auto">
-        {/* HEADER */}
-        <div className="grid grid-cols-8 min-w-[1000px] bg-black text-orange-500 px-6 py-3 font-semibold text-sm">
-          <div>Student</div>
-          <div>Category</div>
-          <div>SubCategory</div>
-          <div className="text-center">Sessions</div>
-          <div className="text-center">Total</div>
-          <div className="text-center">Paid</div>
-          <div className="text-center">Pending</div>
-          <div className="text-center">Reason</div>
-        </div>
+      {/* ================= TABLE ================= */}
+      <div className="bg-white rounded-xl shadow overflow-hidden">
+        {/* DESKTOP / LAPTOP VIEW */}
+        <div className="hidden lg:block">
+          {/* HEADER */}
+          <div className="grid grid-cols-8 bg-black text-orange-500 px-6 py-3 font-semibold text-sm">
+            <div>Student</div>
+            <div>Category</div>
+            <div>SubCategory</div>
+            <div className="text-center">Sessions</div>
+            <div className="text-center">Total</div>
+            <div className="text-center">Paid</div>
+            <div className="text-center">Pending</div>
+            <div className="text-center">Reason</div>
+          </div>
 
-        {/* ROWS */}
-        {filteredRows.map((row, index) => {
-          const { student, sport } = row;
-          const data = getFeeData(student, sport);
+          {/* ROWS */}
+          {filteredRows.map((row, index) => {
+            const { student, sport } = row;
+            const data = getFeeData(student, sport);
 
-          return (
-            <div
-              key={`${student.id}-${sport.category}-${sport.subCategory}`}
-              className="grid grid-cols-8 min-w-[1000px] px-6 py-4 border-t items-center text-sm hover:bg-orange-50 cursor-pointer transition"
-              onClick={() => handleEditStudent(student, sport)}
-            >
-              {/* Student */}
-              <div className="font-medium text-gray-800">
-                <div className="flex items-start gap-1 text-left">
-                  <span className="min-w-[20px] text-gray-600">
-                    {index + 1}.
-                  </span>
-                  <span className="break-words leading-snug">
-                    {student.firstName} {student.lastName}
-                  </span>
+            return (
+              <div
+                key={`${student.id}-${sport.category}-${sport.subCategory}`}
+                onClick={() => handleEditStudent(student, sport)}
+                className="grid grid-cols-8 px-6 py-4 border-t items-center text-sm hover:bg-orange-50 cursor-pointer transition"
+              >
+                <div className="font-medium text-gray-800">
+                  {index + 1}. {student.firstName} {student.lastName}
+                </div>
+
+                <div>{sport.category}</div>
+
+                <div>{sport.subCategory}</div>
+
+                <div className="text-center">
+                  {sport.sessions || student.sessions || "-"}
+                </div>
+
+                <div className="text-center font-semibold">₹ {data.total}</div>
+
+                <div className="text-center text-green-600 font-semibold">
+                  ₹ {data.paid}
+                  {data.paidDate !== "-" && (
+                    <div className="text-xs text-gray-500">{data.paidDate}</div>
+                  )}
+                </div>
+
+                <div className="text-center text-red-600 font-semibold">
+                  ₹ {data.pending}
+                </div>
+
+                <div className="text-center">
+                  {data.reason ? (
+                    <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
+                      {data.reason}
+                    </span>
+                  ) : (
+                    "-"
+                  )}
                 </div>
               </div>
+            );
+          })}
+        </div>
 
-              {/* Category */}
-              <div className="text-gray-700">{sport.category}</div>
+        {/* MOBILE / TABLET VIEW */}
+        <div className="lg:hidden divide-y">
+          {filteredRows.map((row, index) => {
+            const { student, sport } = row;
+            const data = getFeeData(student, sport);
 
-              {/* SubCategory */}
-              <div className="text-gray-700">{sport.subCategory}</div>
+            return (
+              <div
+                key={`${student.id}-${sport.category}-${sport.subCategory}`}
+                onClick={() => handleEditStudent(student, sport)}
+                className="p-4 hover:bg-orange-50 transition cursor-pointer"
+              >
+                {/* TOP */}
+                <div className="flex justify-between items-start gap-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-800 text-base">
+                      {index + 1}. {student.firstName} {student.lastName}
+                    </h3>
 
-              {/* Sessions */}
-              <div className="text-center text-gray-700">
-                {sport.sessions || student.sessions || "-"}
+                    <p className="text-sm text-gray-500 mt-1">
+                      {sport.category} • {sport.subCategory}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">Sessions</p>
+                    <p className="font-medium text-gray-700">
+                      {sport.sessions || student.sessions || "-"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* FEES */}
+                <div className="grid grid-cols-3 gap-3 mt-4 text-center">
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <p className="text-xs text-gray-500">Total</p>
+                    <p className="font-semibold">₹ {data.total}</p>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <p className="text-xs text-gray-500">Paid</p>
+                    <p className="font-semibold text-green-600">
+                      ₹ {data.paid}
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-2">
+                    <p className="text-xs text-gray-500">Pending</p>
+                    <p className="font-semibold text-red-600">
+                      ₹ {data.pending}
+                    </p>
+                  </div>
+                </div>
+
+                {/* DATE + REASON */}
+                <div className="mt-3 flex flex-wrap gap-2 justify-between items-center">
+                  <div className="text-xs text-gray-500">
+                    {data.paidDate !== "-"
+                      ? `Paid: ${data.paidDate}`
+                      : "Not Paid Yet"}
+                  </div>
+
+                  {data.reason && (
+                    <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
+                      {data.reason}
+                    </span>
+                  )}
+                </div>
               </div>
-
-              {/* Total */}
-              <div className="text-center font-semibold">₹ {data.total}</div>
-
-              {/* Paid */}
-              <div className="text-center text-green-600 font-semibold">
-                ₹ {data.paid}
-                {data.paidDate !== "-" && (
-                  <div className="text-xs text-gray-500">{data.paidDate}</div>
-                )}
-              </div>
-
-              {/* Pending */}
-              <div className="text-center text-red-600 font-semibold">
-                ₹ {data.pending}
-              </div>
-
-              {/* Reason */}
-              <div className="text-center">
-                {data.reason ? (
-                  <span className="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded">
-                    {data.reason}
-                  </span>
-                ) : (
-                  "-"
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {showEditModal && (

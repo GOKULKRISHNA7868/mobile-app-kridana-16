@@ -1005,8 +1005,8 @@ export default function StudentPerformanceReport() {
               {selectedSubCategory
                 ? selectedSubCategory
                 : selectedCategory
-                  ? "Select Sub Category"
-                  : "Select Category First"}
+                ? "Select Sub Category"
+                : "Select Category First"}
             </span>
 
             <ChevronDown

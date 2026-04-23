@@ -80,6 +80,7 @@ import MobileEditprofile from "./pages/MobileEditprofile";
 import PendingFeesDetails from "./components/InstituteDashboard/PendingFeesDetails";
 import StudentsAttendancePage from "./components/InstituteDashboard/StudentsAttendancePage";
 import TrainerStudentsPage from "./components/TrainersDashboard/TrainerStudentsPage";
+import Uploadimages from "./pages/Uploadimages";
 function App() {
   usePageTracking();
   const location = useLocation();
@@ -141,6 +142,7 @@ function App() {
                   path="/pending-fees/:branch"
                   element={<PendingFeesDetails />}
                 />
+                <Route path="/Uploadimages" element={<Uploadimages />} />
                 {/* LANDING */}
                 <Route path="/RoleSelection" element={<RoleSelection />} />
                 <Route path="/reels/:index" element={<ReelViewer />} />

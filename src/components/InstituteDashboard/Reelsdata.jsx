@@ -307,9 +307,9 @@ const AnalyticsPage = () => {
 
     fetchGraphData();
   }, [user, selectedYear, startMonth, endMonth]);
-const downloadPDFReport = async () => {
-  try {
-    const reportHTML = `
+  const downloadPDFReport = async () => {
+    try {
+      const reportHTML = `
       <div style="width:794px;padding:30px;font-family:Arial">
         
         <div style="display:flex;justify-content:space-between;margin-bottom:20px">
@@ -317,7 +317,9 @@ const downloadPDFReport = async () => {
             <img src="/logo.png" style="width:50px;height:50px"/>
             <div>
               <h2>Institute Analytics Report</h2>
-              <p>Year: ${selectedYear} | Months: ${startMonth || "Jan"} - ${endMonth || "Dec"}</p>
+              <p>Year: ${selectedYear} | Months: ${startMonth || "Jan"} - ${
+        endMonth || "Dec"
+      }</p>
             </div>
           </div>
 
@@ -362,7 +364,7 @@ ${graphData
 <td style="border:1px solid #ccc;padding:8px;text-align:center">₹ ${r.salary.toLocaleString()}</td>
 <td style="border:1px solid #ccc;padding:8px;text-align:center">₹ ${r.profit.toLocaleString()}</td>
 </tr>
-`
+`,
   )
   .join("")}
 </tbody>
@@ -372,33 +374,33 @@ ${graphData
 </div>
 `;
 
-    const container = document.createElement("div");
-    container.innerHTML = reportHTML;
-    document.body.appendChild(container);
+      const container = document.createElement("div");
+      container.innerHTML = reportHTML;
+      document.body.appendChild(container);
 
-    const canvas = await html2canvas(container, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-    });
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
 
-    const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/png");
 
-    const pdf = new jsPDF("p", "mm", "a4");
+      const pdf = new jsPDF("p", "mm", "a4");
 
-    const imgWidth = 210;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    pdf.addImage(imgData, "PNG", 10, 10, 190, imgHeight);
+      pdf.addImage(imgData, "PNG", 10, 10, 190, imgHeight);
 
-    const blob = pdf.output("bloburl");
-    window.open(blob);
+      const blob = pdf.output("bloburl");
+      window.open(blob);
 
-    document.body.removeChild(container);
-  } catch (err) {
-    console.error("PDF generation error:", err);
-  }
-};
+      document.body.removeChild(container);
+    } catch (err) {
+      console.error("PDF generation error:", err);
+    }
+  };
   /* ================= PAYROLL CALCULATIONS ================= */
   const highestMonth = graphData.reduce(
     (max, item) => (item.revenue > max.revenue ? item : max),
@@ -416,63 +418,61 @@ ${graphData
 
   return (
     <div className="p-6">
-<div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-  <h1 className="text-3xl font-bold">Growth & Performance Overview</h1>
+      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
+        <h1 className="text-3xl font-bold">Growth & Performance Overview</h1>
 
-  {/* FILTERS + DOWNLOAD */}
-  <div className="flex flex-wrap items-center gap-4">
+        {/* FILTERS + DOWNLOAD */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* YEAR */}
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="border px-4 py-2 rounded-lg"
+          >
+            {[2023, 2024, 2025, 2026].map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
 
-    {/* YEAR */}
-    <select
-      value={selectedYear}
-      onChange={(e) => setSelectedYear(Number(e.target.value))}
-      className="border px-4 py-2 rounded-lg"
-    >
-      {[2023, 2024, 2025, 2026].map((year) => (
-        <option key={year} value={year}>
-          {year}
-        </option>
-      ))}
-    </select>
+          {/* FROM MONTH */}
+          <select
+            value={startMonth || ""}
+            onChange={(e) => setStartMonth(e.target.value)}
+            className="border px-4 py-2 rounded-lg"
+          >
+            <option value="">From Month</option>
+            {monthsList.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.name}
+              </option>
+            ))}
+          </select>
 
-    {/* FROM MONTH */}
-    <select
-      value={startMonth || ""}
-      onChange={(e) => setStartMonth(e.target.value)}
-      className="border px-4 py-2 rounded-lg"
-    >
-      <option value="">From Month</option>
-      {monthsList.map((m) => (
-        <option key={m.value} value={m.value}>
-          {m.name}
-        </option>
-      ))}
-    </select>
+          {/* TO MONTH */}
+          <select
+            value={endMonth || ""}
+            onChange={(e) => setEndMonth(e.target.value)}
+            className="border px-4 py-2 rounded-lg"
+          >
+            <option value="">To Month</option>
+            {monthsList.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.name}
+              </option>
+            ))}
+          </select>
 
-    {/* TO MONTH */}
-    <select
-      value={endMonth || ""}
-      onChange={(e) => setEndMonth(e.target.value)}
-      className="border px-4 py-2 rounded-lg"
-    >
-      <option value="">To Month</option>
-      {monthsList.map((m) => (
-        <option key={m.value} value={m.value}>
-          {m.name}
-        </option>
-      ))}
-    </select>
-
-    {/* DOWNLOAD BUTTON */}
-    <button
-      onClick={downloadPDFReport}
-      className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg font-semibold"
-    >
-      Download Report
-    </button>
-
-  </div>
-</div>
+          {/* DOWNLOAD BUTTON */}
+          <button
+            onClick={downloadPDFReport}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg font-semibold"
+          >
+            Download Report
+          </button>
+        </div>
+      </div>
 
       {/* SUMMARY CARDS */}
       <div className="grid grid-cols-4 gap-6 mb-8">
@@ -503,62 +503,85 @@ ${graphData
       </div>
 
       {/* TOP CONTENT INSIGHTS */}
-      <div className="bg-gray-50 border rounded-xl p-6 shadow-sm">
-        <h2 className="text-2xl font-bold mb-6">Top Content Insights</h2>
+      <div className="bg-gray-50 border rounded-2xl p-4 sm:p-6 shadow-sm">
+        {/* HEADER */}
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-5">
+          Top Content Insights
+        </h2>
 
         {/* TABS */}
-        <div className="flex gap-8 border-b mb-6">
-          {["views", "likes", "dislikes", "comments"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-2 capitalize ${
-                activeTab === tab
-                  ? "text-orange-600 border-b-2 border-orange-600 font-semibold"
-                  : "text-gray-600"
-              }`}
-            >
-              {`Most ${tab}`}
-            </button>
-          ))}
-        </div>
-
-        {/* TABLE */}
-        <div className="grid grid-cols-6 font-semibold text-orange-600 mb-4">
-          <div>Videos</div>
-          <div>Title</div>
-          <div>Views</div>
-          <div>Likes</div>
-          <div>Dislikes</div>
-          <div>Comments</div>
-        </div>
-
-        {topReels.slice(0, 5).map((reel, i) => (
-          <div key={i} className="grid grid-cols-6 items-center py-4 border-t">
-            <div
-              onClick={() => handlePlayReel(reel.videoUrl)}
-              className="w-20 h-14 bg-gray-300 rounded-md cursor-pointer flex items-center justify-center text-xs font-semibold"
-            >
-              ▶ Play
-            </div>
-
-            <div>{reel.title}</div>
-            <div>{reel.views}</div>
-            <div>{reel.likes}</div>
-            <div>{reel.dislikes}</div>
-            <div>{reel.comments}</div>
+        <div className="overflow-x-auto scrollbar-hide mb-5">
+          <div className="flex gap-4 min-w-max border-b pb-2">
+            {["views", "likes", "dislikes", "comments"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`pb-2 px-1 whitespace-nowrap capitalize text-sm sm:text-base ${
+                  activeTab === tab
+                    ? "text-orange-600 border-b-2 border-orange-600 font-semibold"
+                    : "text-gray-500 hover:text-orange-500"
+                }`}
+              >
+                {`Most ${tab}`}
+              </button>
+            ))}
           </div>
-        ))}
+        </div>
 
+        {/* TABLE CONTAINER */}
+        <div className="bg-white rounded-xl border overflow-hidden">
+          {/* HEADER */}
+          <div className="grid grid-cols-6 bg-black text-orange-500 text-xs sm:text-sm font-semibold px-3 sm:px-4 py-3">
+            <div>Video</div>
+            <div className="col-span-2">Title</div>
+            <div className="text-center">Views</div>
+            <div className="text-center">Likes</div>
+            <div className="text-center">Comments</div>
+          </div>
+
+          {/* SCROLLABLE BODY */}
+          <div className="max-h-[420px] overflow-y-auto divide-y">
+            {topReels.map((reel, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-6 items-center px-3 sm:px-4 py-3 text-xs sm:text-sm hover:bg-gray-50 transition"
+              >
+                {/* VIDEO */}
+                <div>
+                  <button
+                    onClick={() => handlePlayReel(reel.videoUrl)}
+                    className="bg-gray-200 hover:bg-gray-300 rounded-lg px-2 py-1 text-[11px] sm:text-xs font-semibold"
+                  >
+                    ▶ Play
+                  </button>
+                </div>
+
+                {/* TITLE */}
+                <div className="col-span-2 pr-2">
+                  <p className="line-clamp-2 font-medium text-gray-800">
+                    {reel.title}
+                  </p>
+                </div>
+
+                {/* STATS */}
+                <div className="text-center font-medium">{reel.views}</div>
+                <div className="text-center font-medium">{reel.likes}</div>
+                <div className="text-center font-medium">{reel.comments}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* VIDEO POPUP */}
         {showVideoPopup && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-            <div className="bg-black rounded-xl p-4 w-[90%] max-w-[500px] relative">
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            <div className="bg-black rounded-2xl p-3 w-full max-w-lg relative">
               <button
                 onClick={() => {
                   setShowVideoPopup(false);
                   setActiveVideoUrl(null);
                 }}
-                className="absolute top-2 right-2 text-white text-xl"
+                className="absolute top-2 right-3 text-white text-xl"
               >
                 ✕
               </button>
@@ -568,7 +591,7 @@ ${graphData
                 controls
                 autoPlay
                 playsInline
-                className="w-full rounded-lg"
+                className="w-full rounded-xl"
               />
             </div>
           </div>

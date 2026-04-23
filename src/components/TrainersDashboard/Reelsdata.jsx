@@ -65,7 +65,9 @@ Trainer Revenue Report
 
   <p>
   Year: ${selectedYear} <br/>
- Months: ${new Date(0, startMonth).toLocaleString("default", { month: "short" })}
+ Months: ${new Date(0, startMonth).toLocaleString("default", {
+   month: "short",
+ })}
 -
 ${new Date(0, endMonth).toLocaleString("default", { month: "short" })}
   </p>
@@ -337,17 +339,42 @@ Total Revenue: ₹${totalRevenue.toLocaleString()}
   );
 
   const totalRevenue = graphData.reduce((sum, item) => sum + item.revenue, 0);
+  const Card = ({ title, value }) => (
+    <div className="border p-4 rounded-xl bg-orange-50">
+      <p className="text-xs sm:text-sm text-gray-600">{title}</p>
+      <p className="text-lg sm:text-2xl font-bold text-orange-600 mt-1">
+        {value}
+      </p>
+    </div>
+  );
 
+  const MiniCard = ({ title, value, sub, green, red }) => (
+    <div className="bg-white border border-orange-200 shadow rounded-xl p-4">
+      <p
+        className={`text-sm font-semibold ${
+          green ? "text-green-600" : red ? "text-red-500" : "text-gray-600"
+        }`}
+      >
+        {title}
+      </p>
+      <h3 className="text-xl font-bold mt-1">{value}</h3>
+      {sub && <p className="text-sm text-gray-500">{sub}</p>}
+    </div>
+  );
   return (
-    <div className="p-6">
+    <div className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6 relative">
-        <h1 className="text-3xl font-bold">Growth & Performance Overview</h1>
-        <div className="flex gap-4 mb-6">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight">
+          Growth & Performance Overview
+        </h1>
+
+        {/* FILTERS */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full xl:w-auto">
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="border px-3 py-2 rounded"
+            className="border px-3 py-2 rounded-lg text-sm w-full"
           >
             {[2026, 2025, 2024, 2023].map((y) => (
               <option key={y} value={y}>
@@ -359,9 +386,9 @@ Total Revenue: ₹${totalRevenue.toLocaleString()}
           <select
             value={startMonth}
             onChange={(e) => setStartMonth(e.target.value)}
-            className="border px-3 py-2 rounded"
+            className="border px-3 py-2 rounded-lg text-sm w-full"
           >
-            <option value="">From Month</option>
+            <option value="">From</option>
             {[...Array(12)].map((_, i) => (
               <option key={i} value={i}>
                 {new Date(0, i).toLocaleString("default", { month: "short" })}
@@ -372,9 +399,9 @@ Total Revenue: ₹${totalRevenue.toLocaleString()}
           <select
             value={endMonth}
             onChange={(e) => setEndMonth(e.target.value)}
-            className="border px-3 py-2 rounded"
+            className="border px-3 py-2 rounded-lg text-sm w-full"
           >
-            <option value="">To Month</option>
+            <option value="">To</option>
             {[...Array(12)].map((_, i) => (
               <option key={i} value={i}>
                 {new Date(0, i).toLocaleString("default", { month: "short" })}
@@ -384,66 +411,117 @@ Total Revenue: ₹${totalRevenue.toLocaleString()}
 
           <button
             onClick={downloadPDFReport}
-            className="bg-orange-500 text-white px-4 py-2 rounded"
+            className="bg-orange-500 text-white rounded-lg px-4 py-2 text-sm font-medium w-full"
           >
-            Download Report
+            Report
           </button>
         </div>
       </div>
 
-      {/* ================= UI BELOW UNCHANGED ================= */}
-
-      {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
-        <div className="border p-4 rounded-lg bg-orange-50">
-          <p>Profile Views</p>
-          <p className="text-xl font-bold text-orange-600">
-            {topReels.reduce((s, r) => s + Number(r.profileViews || 0), 0)}
-          </p>
-        </div>
-        <div className="border p-4 rounded-lg bg-orange-50">
-          <p>Video Views</p>
-          <p className="text-xl font-bold text-orange-600">
-            {topReels.reduce((s, r) => s + r.views, 0)}
-          </p>
-        </div>
-        <div className="border p-4 rounded-lg bg-orange-50">
-          <p>likes</p>
-          <p className="text-xl font-bold text-red-500">
-            {topReels.reduce((s, r) => s + r.likes, 0)}
-          </p>
-        </div>
-        <div className="border p-4 rounded-lg bg-orange-50">
-          <p>Dislikes</p>
-          <p className="text-xl font-bold text-orange-600">
-            {topReels.reduce((s, r) => s + r.dislikes, 0)}
-          </p>
-        </div>
+      {/* SUMMARY */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <Card
+          title="Profile Views"
+          value={topReels.reduce((s, r) => s + Number(r.profileViews || 0), 0)}
+        />
+        <Card
+          title="Video Views"
+          value={topReels.reduce((s, r) => s + r.views, 0)}
+        />
+        <Card title="Likes" value={topReels.reduce((s, r) => s + r.likes, 0)} />
+        <Card
+          title="Dislikes"
+          value={topReels.reduce((s, r) => s + r.dislikes, 0)}
+        />
       </div>
 
-      {/* TOP CONTENT INSIGHTS */}
-      <div className="bg-gray-50 border rounded-xl p-6 shadow-sm">
-        <h2 className="text-2xl font-bold mb-6">Top Content Insights</h2>
+      {/* TOP CONTENT */}
+      <div className="bg-gray-50 border rounded-xl p-3 sm:p-5 shadow-sm">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4">
+          Top Content Insights
+        </h2>
 
         {/* TABS */}
-        <div className="flex gap-8 border-b mb-6">
+        <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-6 border-b pb-3 mb-4">
           {["views", "likes", "dislikes", "comments"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-2 capitalize ${
+              className={`text-sm pb-2 capitalize ${
                 activeTab === tab
                   ? "text-orange-600 border-b-2 border-orange-600 font-semibold"
                   : "text-gray-600"
               }`}
             >
-              {`Most ${tab}`}
+              Most {tab}
             </button>
           ))}
         </div>
 
-        {/* TABLE */}
-        <div className="grid grid-cols-6 font-semibold text-orange-600 mb-4">
+        {/* MOBILE CARDS */}
+        <div className="grid grid-cols-6 gap-2 bg-black text-orange-500 text-[11px] font-semibold rounded-t-xl px-3 py-3">
+          <div>Video</div>
+          <div className="col-span-2">Title</div>
+          <div className="text-center">Views</div>
+          <div className="text-center">Likes</div>
+          <div className="text-center">Dislikes</div>
+        </div>
+
+        {/* ROWS */}
+        <div className="bg-white rounded-b-xl border border-t-0 overflow-hidden">
+          {topReels.slice(0, 5).map((reel, i) => (
+            <div
+              key={i}
+              className="grid grid-cols-6 gap-2 items-center px-3 py-3 border-t first:border-t-0"
+            >
+              {/* VIDEO */}
+              <button
+                onClick={() => handlePlayReel(reel.videoUrl)}
+                className="w-14 h-10 rounded-md bg-gray-200 text-[10px] font-semibold flex items-center justify-center"
+              >
+                ▶ Play
+              </button>
+
+              {/* TITLE */}
+              <div className="col-span-2 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate">
+                  {reel.title}
+                </p>
+
+                <p className="text-[10px] text-gray-500 mt-1">
+                  💬 {reel.comments} •
+                </p>
+              </div>
+
+              {/* VIEWS */}
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-800">
+                  {reel.views}
+                </p>
+                <p className="text-[10px] text-gray-500">Views</p>
+              </div>
+
+              {/* LIKES */}
+              <div className="text-center">
+                <p className="text-sm font-semibold text-orange-600">
+                  {reel.likes}
+                </p>
+                <p className="text-[10px] text-gray-500">Likes</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-orange-600">
+                  {reel.dislikes}
+                </p>
+                <p className="text-[10px] text-gray-500">Dislikes</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* DESKTOP TABLE */}
+      <div className="hidden md:block">
+        <div className="grid grid-cols-6 font-semibold text-orange-600 mb-3 text-sm">
           <div>Videos</div>
           <div>Title</div>
           <div>Views</div>
@@ -453,13 +531,16 @@ Total Revenue: ₹${totalRevenue.toLocaleString()}
         </div>
 
         {topReels.slice(0, 5).map((reel, i) => (
-          <div key={i} className="grid grid-cols-6 items-center py-4 border-t">
-            <div
-              onClick={() => handlePlayReel(reel.videoUrl)} // ✅ Now this works
-              className="w-20 h-14 bg-gray-300 rounded-md cursor-pointer flex items-center justify-center text-xs font-semibold"
+          <div
+            key={i}
+            className="grid grid-cols-6 items-center py-4 border-t text-sm"
+          >
+            <button
+              onClick={() => handlePlayReel(reel.videoUrl)}
+              className="w-20 h-14 bg-gray-300 rounded-md text-xs font-semibold"
             >
               ▶ Play
-            </div>
+            </button>
 
             <div>{reel.title}</div>
             <div>{reel.views}</div>
@@ -468,106 +549,73 @@ Total Revenue: ₹${totalRevenue.toLocaleString()}
             <div>{reel.comments}</div>
           </div>
         ))}
-        {showVideoPopup && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-            <div className="bg-black rounded-xl p-4 w-[90%] max-w-[500px] relative">
-              <button
-                onClick={() => {
-                  setShowVideoPopup(false);
-                  setActiveVideoUrl(null);
-                }}
-                className="absolute top-2 right-2 text-white text-xl"
-              >
-                ✕
-              </button>
-
-              <video
-                src={activeVideoUrl}
-                controls
-                autoPlay
-                playsInline
-                className="w-full rounded-lg"
-              />
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* GRAPHS */}
-      <h2 className="text-xl font-semibold mt-5 mb-4">Revenue Reports</h2>
+      {/* REVENUE GRAPH */}
+      <h2 className="text-lg sm:text-xl font-semibold mt-8 mb-3">
+        Revenue Reports
+      </h2>
 
-      <div className="bg-white shadow rounded-lg p-5 mt-10">
-        {loadingRevenue ? (
-          <div className="flex flex-col items-center justify-center h-[300px]">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-
-            <p className="mt-4 text-gray-500">Fetching revenue analytics...</p>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={graphData}>
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="revenue" fill="#f97316" />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
+      <div className="bg-white shadow rounded-xl p-3 sm:p-5">
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={graphData}>
+            <XAxis dataKey="month" fontSize={11} />
+            <YAxis fontSize={11} />
+            <Tooltip />
+            <Bar dataKey="revenue" fill="#f97316" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
-      <h2 className="text-xl font-semibold mt-10 mb-4">Payroll Overview</h2>
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* LEFT SIDE GRAPH */}
-        <div className="md:col-span-2 bg-white shadow rounded-lg p-5">
-          <ResponsiveContainer width="100%" height={350}>
+
+      {/* PAYROLL */}
+      <h2 className="text-lg sm:text-xl font-semibold mt-8 mb-3">
+        Payroll Overview
+      </h2>
+
+      <div className="grid lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white shadow rounded-xl p-3 sm:p-5">
+          <ResponsiveContainer width="100%" height={280}>
             <LineChart data={graphData}>
-              <XAxis dataKey="month" />
-              <YAxis />
+              <XAxis dataKey="month" fontSize={11} />
+              <YAxis fontSize={11} />
               <Tooltip />
-              <Line type="monotone" dataKey="revenue" stroke="#f97316" />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="#f97316"
+                strokeWidth={3}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
-        {/* RIGHT SIDE CARDS */}
-        <div className="flex flex-col gap-5">
-          {/* Highest Paying */}
-          <div className="bg-white border border-orange-200 shadow rounded-lg p-5">
-            <p className="text-green-600 font-semibold text-sm">
-              Highest Paying
-            </p>
-            <h3 className="text-2xl font-bold">
-              ₹ {highestMonth?.revenue?.toLocaleString()}
-            </h3>
-            <p className="text-gray-600">{highestMonth?.month}</p>
-          </div>
-
-          {/* Lowest Paying */}
-          <div className="bg-white border border-orange-200 shadow rounded-lg p-5">
-            <p className="text-red-500 font-semibold text-sm">Lowest Paying</p>
-            <h3 className="text-2xl font-bold">
-              ₹ {lowestMonth?.revenue?.toLocaleString()}
-            </h3>
-            <p className="text-gray-600">{lowestMonth?.month}</p>
-          </div>
-
-          {/* Total Paying */}
-          <div className="bg-white border border-orange-200 shadow rounded-lg p-5">
-            <p className="text-gray-600 font-semibold text-sm">Total Paying</p>
-            <h3 className="text-2xl font-bold">
-              ₹ {totalRevenue.toLocaleString()}
-            </h3>
-          </div>
+        <div className="grid sm:grid-cols-3 lg:grid-cols-1 gap-4">
+          <MiniCard
+            title="Highest Paying"
+            value={`₹ ${highestMonth?.revenue || 0}`}
+            sub={highestMonth?.month}
+            green
+          />
+          <MiniCard
+            title="Lowest Paying"
+            value={`₹ ${lowestMonth?.revenue || 0}`}
+            sub={lowestMonth?.month}
+            red
+          />
+          <MiniCard title="Total Paying" value={`₹ ${totalRevenue || 0}`} />
         </div>
       </div>
 
-      {/* WORKFORCE */}
-      <div className="bg-gray-50 border rounded-xl p-6 mt-10 shadow-sm">
-        <h2 className="text-2xl font-bold mb-6">Workforce & Clients Metrics</h2>
+      {/* CUSTOMERS */}
+      <div className="bg-gray-50 border rounded-xl p-4 sm:p-6 mt-8 shadow-sm">
+        <h2 className="text-lg sm:text-2xl font-bold mb-4">
+          Workforce & Clients Metrics
+        </h2>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="border p-6 rounded-xl bg-white">
-            <h3 className="text-xl font-semibold">Customers</h3>
-            <p>Joined: {customerStats.joined}</p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div className="bg-white border rounded-xl p-5">
+            <h3 className="text-lg font-semibold">Customers</h3>
+            <p className="mt-2 text-gray-600">Joined: {customerStats.joined}</p>
           </div>
         </div>
       </div>

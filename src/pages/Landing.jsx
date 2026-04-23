@@ -483,53 +483,55 @@ const Landing = () => {
       {/* ================================================= */}
       {/* ================= HERO SECTION =================== */}
       {/* ================================================= */}
-      <section className="w-full bg-white">
-        <div className="relative w-full max-w-[1440px] mx-auto overflow-hidden group h-[150px] sm:h-[300px] md:h-[400px] lg:h-[500px] xl:h-[600px]">
-          {/* SLIDES */}
-          {slides.map((img, index) => (
-            <img
-              key={index}
-              src={img}
-              alt="slide"
-              className={`absolute w-full h-full object-contain md:object-cover transition-opacity duration-700 ${
-                index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
-              }`}
-            />
-          ))}
+      <section className="w-full bg-white pb-5">
+        <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-0">
+          <div className="relative overflow-hidden h-[170px] sm:h-[300px] md:h-[420px] lg:h-[520px] xl:h-[620px]">
+            {/* SLIDER */}
+            <motion.div
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              onDragEnd={(e, info) => {
+                if (info.offset.x < -80) {
+                  setCurrentSlide((prev) =>
+                    prev === slides.length - 1 ? 0 : prev + 1,
+                  );
+                } else if (info.offset.x > 80) {
+                  setCurrentSlide((prev) =>
+                    prev === 0 ? slides.length - 1 : prev - 1,
+                  );
+                }
+              }}
+              animate={{
+                x: `-${currentSlide * 100}%`,
+              }}
+              transition={{ duration: 0.45 }}
+              className="flex h-full cursor-grab active:cursor-grabbing"
+            >
+              {slides.map((img, index) => (
+                <div
+                  key={index}
+                  className="min-w-full h-full shrink-0 rounded-2xl overflow-hidden"
+                >
+                  <img
+                    src={img}
+                    alt={`slide-${index}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </motion.div>
+          </div>
 
-          {/* LEFT ARROW */}
-          {/* LEFT ARROW */}
-          <button
-            onClick={() =>
-              setCurrentSlide((prev) =>
-                prev === 0 ? slides.length - 1 : prev - 1,
-              )
-            }
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-3 rounded-full shadow-md hover:bg-black transition z-20"
-          >
-            ❮
-          </button>
-
-          {/* RIGHT ARROW */}
-          <button
-            onClick={() =>
-              setCurrentSlide((prev) =>
-                prev === slides.length - 1 ? 0 : prev + 1,
-              )
-            }
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-3 rounded-full shadow-md hover:bg-black transition z-20"
-          >
-            ❯
-          </button>
-
-          {/* DOT INDICATORS */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          {/* DOTS BELOW */}
+          <div className="flex justify-center items-center gap-2 mt-4">
             {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`w-3 h-3 rounded-full ${
-                  currentSlide === index ? "bg-orange-500" : "bg-white/50"
+                className={`rounded-full transition-all duration-300 ${
+                  currentSlide === index
+                    ? "w-7 h-2 bg-orange-500"
+                    : "w-2 h-2 bg-gray-300"
                 }`}
               />
             ))}
@@ -844,25 +846,25 @@ const Landing = () => {
                 (a, b) => Number(b.rating || 0) - Number(a.rating || 0),
               )
             : userLocation
-              ? trainers
-                  .filter(
-                    (t) =>
-                      t.latitude !== undefined &&
-                      t.longitude !== undefined &&
-                      t.latitude !== null &&
-                      t.longitude !== null,
-                  )
-                  .map((t) => ({
-                    ...t,
-                    distance: getDistance(
-                      userLocation.lat,
-                      userLocation.lng,
-                      Number(t.latitude),
-                      Number(t.longitude),
-                    ),
-                  }))
-                  .sort((a, b) => a.distance - b.distance)
-              : []
+            ? trainers
+                .filter(
+                  (t) =>
+                    t.latitude !== undefined &&
+                    t.longitude !== undefined &&
+                    t.latitude !== null &&
+                    t.longitude !== null,
+                )
+                .map((t) => ({
+                  ...t,
+                  distance: getDistance(
+                    userLocation.lat,
+                    userLocation.lng,
+                    Number(t.latitude),
+                    Number(t.longitude),
+                  ),
+                }))
+                .sort((a, b) => a.distance - b.distance)
+            : []
           )
             .slice(0, 3)
             .map((t) => (
@@ -988,25 +990,25 @@ const Landing = () => {
                 (a, b) => Number(b.rating || 0) - Number(a.rating || 0),
               )
             : userLocation
-              ? institutes
-                  .filter(
-                    (i) =>
-                      i.latitude !== undefined &&
-                      i.longitude !== undefined &&
-                      i.latitude !== null &&
-                      i.longitude !== null,
-                  )
-                  .map((i) => ({
-                    ...i,
-                    distance: getDistance(
-                      userLocation.lat,
-                      userLocation.lng,
-                      Number(i.latitude),
-                      Number(i.longitude),
-                    ),
-                  }))
-                  .sort((a, b) => a.distance - b.distance)
-              : []
+            ? institutes
+                .filter(
+                  (i) =>
+                    i.latitude !== undefined &&
+                    i.longitude !== undefined &&
+                    i.latitude !== null &&
+                    i.longitude !== null,
+                )
+                .map((i) => ({
+                  ...i,
+                  distance: getDistance(
+                    userLocation.lat,
+                    userLocation.lng,
+                    Number(i.latitude),
+                    Number(i.longitude),
+                  ),
+                }))
+                .sort((a, b) => a.distance - b.distance)
+            : []
           )
             .slice(0, 3)
             .map((i) => (

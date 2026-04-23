@@ -796,11 +796,11 @@ const MyAccountPage = ({ setActiveMenu }) => {
       prev.map((s) =>
         s.id === selectedStudent.id
           ? {
-            ...s,
-            status: "Left",
-            leftReason: leaveReason,
-            leftDate: serverTimestamp(),
-          }
+              ...s,
+              status: "Left",
+              leftReason: leaveReason,
+              leftDate: serverTimestamp(),
+            }
           : s,
       ),
     );
@@ -845,11 +845,11 @@ const MyAccountPage = ({ setActiveMenu }) => {
       prev.map((s) =>
         s.id === student.id
           ? {
-            ...s,
-            status: "Left",
-            leftReason: reason,
-            leftDate: serverTimestamp(),
-          }
+              ...s,
+              status: "Left",
+              leftReason: reason,
+              leftDate: serverTimestamp(),
+            }
           : s,
       ),
     );
@@ -931,20 +931,22 @@ const MyAccountPage = ({ setActiveMenu }) => {
       <div className="flex flex-wrap gap-4 sm:gap-8 border-b pb-2 mb-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab("management")}
-          className={`flex items-center gap-2 pb-2 border-b-2 ${activeTab === "management"
-            ? "text-orange-500 border-orange-500 font-semibold"
-            : "text-gray-600 border-transparent"
-            }`}
+          className={`flex items-center gap-2 pb-2 border-b-2 ${
+            activeTab === "management"
+              ? "text-orange-500 border-orange-500 font-semibold"
+              : "text-gray-600 border-transparent"
+          }`}
         >
           <Users size={18} /> Management
         </button>
 
         <button
           onClick={() => setActiveTab("customers")}
-          className={`flex items-center gap-2 pb-2 border-b-2 ${activeTab === "customers"
-            ? "text-orange-500 border-orange-500 font-semibold"
-            : "text-gray-600 border-transparent"
-            }`}
+          className={`flex items-center gap-2 pb-2 border-b-2 ${
+            activeTab === "customers"
+              ? "text-orange-500 border-orange-500 font-semibold"
+              : "text-gray-600 border-transparent"
+          }`}
         >
           <Users size={18} /> Customers
         </button>
@@ -1645,7 +1647,7 @@ const MyAccountPage = ({ setActiveMenu }) => {
             </div>
 
             <button
-              onClick={() => setActiveMenu("Customer Details")}
+              onClick={() => setActiveMenu("Add Customers")}
               className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-md font-medium"
             >
               + Add Customer
@@ -1680,10 +1682,11 @@ const MyAccountPage = ({ setActiveMenu }) => {
                   key={item}
                   onClick={() => setStatusFilter(item)}
                   className={`px-4 py-1.5 rounded-md text-sm font-medium transition
-        ${statusFilter === item
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-200 text-gray-700"
-                    }`}
+        ${
+          statusFilter === item
+            ? "bg-orange-500 text-white"
+            : "bg-gray-200 text-gray-700"
+        }`}
                 >
                   {item}
                 </button>
@@ -1692,145 +1695,205 @@ const MyAccountPage = ({ setActiveMenu }) => {
           </div>
 
           {/* TABLE */}
-          <div className="bg-white rounded-lg shadow overflow-x-auto">
-            {/* TABLE HEADER */}
-            <div
-              className={`grid ${statusFilter === "Left"
-                ? "grid-cols-8 min-w-[1000px]"
-                : "grid-cols-7 min-w-[900px]"
-                } bg-black text-orange-500 px-6 py-3 font-semibold items-center`}
-            >
-              <div className="flex items-center">Name</div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* ================= DESKTOP TABLE ================= */}
+            <div className="hidden md:block">
+              {/* HEADER */}
+              <div
+                className={`grid ${
+                  statusFilter === "Left" ? "grid-cols-8" : "grid-cols-7"
+                } bg-black text-orange-500 px-6 py-4 font-semibold text-sm`}
+              >
+                <div>Name</div>
+                <div className="text-center">Age</div>
+                <div className="text-center">Belt</div>
+                <div className="text-center">Status</div>
 
-              <div className="flex justify-center">Age</div>
+                {statusFilter === "Left" && (
+                  <div className="text-center">Reason</div>
+                )}
 
-              <div className="flex justify-center">Belt</div>
+                <div className="text-center">Added Date</div>
+                <div className="text-center">Left Date</div>
+                <div className="text-center">Action</div>
+              </div>
 
-              <div className="flex justify-center">Status</div>
+              {/* BODY */}
+              {filteredStudents.map((student, index) => (
+                <div
+                  key={student.id}
+                  className={`grid ${
+                    statusFilter === "Left" ? "grid-cols-8" : "grid-cols-7"
+                  } px-6 py-4 border-t text-sm items-center hover:bg-gray-50 transition`}
+                >
+                  <div className="font-medium text-gray-800 truncate">
+                    {index + 1}. {student.firstName} {student.lastName}
+                  </div>
 
-              {statusFilter === "Left" && (
-                <div className="flex justify-center">Reason</div>
-              )}
+                  <div className="text-center">{student.age} yrs</div>
 
-              <div className="flex justify-center">Added Date</div>
+                  <div className="text-center">
+                    {student.sports?.[0]?.belt || "-"}
+                  </div>
 
-              <div className="flex justify-center">Left Date</div>
+                  <div className="text-center">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        student.status === "Left"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-green-100 text-green-700"
+                      }`}
+                    >
+                      {student.status}
+                    </span>
+                  </div>
 
-              <div className="flex justify-center">Action</div>
+                  {statusFilter === "Left" && (
+                    <div className="text-center text-gray-600 text-xs">
+                      {student.leftReason || "-"}
+                    </div>
+                  )}
+
+                  <div className="text-center">
+                    {student.createdAt?.toDate?.().toLocaleDateString?.() ||
+                      "-"}
+                  </div>
+
+                  <div className="text-center">
+                    {student.leftDate?.toDate
+                      ? student.leftDate.toDate().toLocaleDateString()
+                      : "-"}
+                  </div>
+
+                  {/* ACTION */}
+                  <div className="flex justify-center gap-3">
+                    <button
+                      onClick={() => {
+                        setEditingStudent(student);
+                        setShowEditStudentModal(true);
+                      }}
+                    >
+                      <img
+                        src="/edit-icon.png"
+                        alt="edit"
+                        className="w-5 h-5"
+                      />
+                    </button>
+
+                    {statusFilter === "Left" ? (
+                      <button onClick={() => permanentlyDeleteStudent(student)}>
+                        <img
+                          src="/delete-icon.png"
+                          alt="delete"
+                          className="w-5 h-5"
+                        />
+                      </button>
+                    ) : (
+                      <button onClick={() => markAsLeftConfirm(student)}>
+                        <img
+                          src="/delete-icon.png"
+                          alt="left"
+                          className="w-5 h-5"
+                        />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
 
-            {/* TABLE BODY */}
-            {filteredStudents.map((student, index) => (
-              <div
-                key={student.id}
-                className="grid grid-cols-7 min-w-[900px] px-6 py-4 items-center border-t"
-              >
-                <div className="flex items-center">
-                  <span className="mr-2">{index + 1}.</span>
-                  {student.firstName} {student.lastName}
-                </div>
+            {/* ================= MOBILE CARD VIEW ================= */}
+            <div className="md:hidden divide-y">
+              {filteredStudents.map((student, index) => (
+                <div key={student.id} className="p-4 space-y-3">
+                  {/* Top Row */}
+                  <div className="flex justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {index + 1}. {student.firstName} {student.lastName}
+                      </h3>
 
-                <div className="flex justify-center">
-                  {student.age} years
-                </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Belt: {student.sports?.[0]?.belt || "-"}
+                      </p>
+                    </div>
 
-                <div className="flex justify-center">
-                  {student.sports?.[0]?.belt || "-"}
-                </div>
-
-                <div className="flex justify-center">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm ${student.status === "Left"
-                      ? "bg-red-400 text-white"
-                      : "bg-green-400 text-black"
+                    <span
+                      className={`px-3 h-fit py-1 rounded-full text-xs font-semibold ${
+                        student.status === "Left"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-green-100 text-green-700"
                       }`}
-                  >
-                    {student.status}
-                  </span>
-                </div>
-                {statusFilter === "Left" && (
-                  <p className="flex justify-center text-sm text-gray-600">
-                    {student.leftReason || "-"}
-                  </p>
-                )}
-                <p className="flex justify-center">
-                  {student.createdAt?.toDate?.().toLocaleDateString?.() || "-"}
-                </p>
+                    >
+                      {student.status}
+                    </span>
+                  </div>
 
-                <p className="flex justify-center">
-                  {student.leftDate?.toDate
-                    ? student.leftDate.toDate().toLocaleDateString()
-                    : "-"}
-                </p>
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <p className="text-xs text-gray-500">Age</p>
+                      <p className="font-medium">{student.age} yrs</p>
+                    </div>
 
-                {/* ACTION BUTTON */}
-                <div className="flex items-center justify-center gap-2 h-full">
-                  {statusFilter === "Left" ? (
-                    <>
-                      {/* EDIT ICON */}
-                      <button
-                        onClick={() => {
-                          setEditingStudent(student);
-                          setShowEditStudentModal(true);
-                        }}
-                        className="w-8 h-8 flex items-center justify-center"
-                        title="Edit"
-                      >
-                        <img
-                          src="/edit-icon.png"
-                          alt="Edit"
-                          className="w-5 h-5 object-contain"
-                        />
-                      </button>
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <p className="text-xs text-gray-500">Added</p>
+                      <p className="font-medium">
+                        {student.createdAt?.toDate?.().toLocaleDateString?.() ||
+                          "-"}
+                      </p>
+                    </div>
 
-                      {/* DELETE PERMANENT */}
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <p className="text-xs text-gray-500">Left Date</p>
+                      <p className="font-medium">
+                        {student.leftDate?.toDate
+                          ? student.leftDate.toDate().toLocaleDateString()
+                          : "-"}
+                      </p>
+                    </div>
+
+                    {statusFilter === "Left" && (
+                      <div className="bg-gray-50 rounded-lg p-2">
+                        <p className="text-xs text-gray-500">Reason</p>
+                        <p className="font-medium truncate">
+                          {student.leftReason || "-"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-1">
+                    <button
+                      onClick={() => {
+                        setEditingStudent(student);
+                        setShowEditStudentModal(true);
+                      }}
+                      className="flex-1 border border-orange-300 text-orange-500 rounded-lg py-2 font-medium"
+                    >
+                      Edit
+                    </button>
+
+                    {statusFilter === "Left" ? (
                       <button
                         onClick={() => permanentlyDeleteStudent(student)}
-                        className="w-8 h-8 flex items-center justify-center"
-                        title="Delete Permanently"
+                        className="flex-1 bg-red-500 text-white rounded-lg py-2 font-medium"
                       >
-                        <img
-                          src="/delete-icon.png"
-                          alt="Delete"
-                          className="w-5 h-5 object-contain"
-                        />
+                        Delete
                       </button>
-                    </>
-                  ) : (
-                    <>
-                      {/* EDIT ICON */}
-                      <button
-                        onClick={() => {
-                          setEditingStudent(student);
-                          setShowEditStudentModal(true);
-                        }}
-                        className="w-8 h-8 flex items-center justify-center"
-                        title="Edit"
-                      >
-                        <img
-                          src="/edit-icon.png"
-                          alt="Edit"
-                          className="w-5 h-5 object-contain"
-                        />
-                      </button>
-
-                      {/* MARK AS LEFT */}
+                    ) : (
                       <button
                         onClick={() => markAsLeftConfirm(student)}
-                        className="w-8 h-8 flex items-center justify-center"
-                        title="Mark as Left"
+                        className="flex-1 bg-black text-white rounded-lg py-2 font-medium"
                       >
-                        <img
-                          src="/delete-icon.png"
-                          alt="Mark as Left"
-                          className="w-5 h-5 object-contain"
-                        />
+                        Mark Left
                       </button>
-                    </>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -1845,30 +1908,33 @@ const MyAccountPage = ({ setActiveMenu }) => {
             <div className="grid grid-cols-3 gap-3 mb-5">
               <button
                 onClick={() => setSelectedUploadType("image")}
-                className={`py-2 rounded border ${selectedUploadType === "image"
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100"
-                  }`}
+                className={`py-2 rounded border ${
+                  selectedUploadType === "image"
+                    ? "bg-orange-500 text-white"
+                    : "bg-gray-100"
+                }`}
               >
                 Image
               </button>
 
               <button
                 onClick={() => setSelectedUploadType("video")}
-                className={`py-2 rounded border ${selectedUploadType === "video"
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100"
-                  }`}
+                className={`py-2 rounded border ${
+                  selectedUploadType === "video"
+                    ? "bg-orange-500 text-white"
+                    : "bg-gray-100"
+                }`}
               >
                 Video
               </button>
 
               <button
                 onClick={() => setSelectedUploadType("reel")}
-                className={`py-2 rounded border ${selectedUploadType === "reel"
-                  ? "bg-orange-500 text-white"
-                  : "bg-gray-100"
-                  }`}
+                className={`py-2 rounded border ${
+                  selectedUploadType === "reel"
+                    ? "bg-orange-500 text-white"
+                    : "bg-gray-100"
+                }`}
               >
                 Reel
               </button>

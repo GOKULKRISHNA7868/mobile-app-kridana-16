@@ -481,34 +481,6 @@ const StudentsAttendancePage = () => {
         </select>
 
         {/* TIME */}
-        <div className="relative min-w-[140px]">
-          <button
-            onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-            className="w-full border rounded-lg px-3 py-2 text-sm flex justify-between items-center"
-          >
-            {selectedTime
-              ? TIME_SLOTS.find((t) => t.value === selectedTime)?.label
-              : "Time"}
-            <ChevronDown size={16} />
-          </button>
-
-          {showTimeDropdown && (
-            <div className="absolute z-50 bg-white border rounded-lg mt-1 w-full max-h-40 overflow-y-auto">
-              {TIME_SLOTS.map((t) => (
-                <div
-                  key={t.value}
-                  onClick={() => {
-                    setSelectedTime(t.value);
-                    setShowTimeDropdown(false);
-                  }}
-                  className="px-3 py-2 hover:bg-orange-100 cursor-pointer"
-                >
-                  {t.label}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
         <select
           value={selectedCategory}

@@ -378,79 +378,165 @@ const EmployeeAttendancePage = () => {
       </div>
 
       {/* TABLE */}
-      <div className="border-2 border-orange-300 rounded-md overflow-x-auto">
-        {/* HEADER */}
-        <div className="grid grid-cols-5 min-w-[700px] bg-black text-orange-500 font-semibold px-6 py-3">
-          <div>Employee Name</div>
-          <div>Designation</div>
-          <div className="text-center">Present</div>
-          <div className="text-center">Absent</div>
-          <div>Reason</div>
+      {/* ================= RESPONSIVE ATTENDANCE TABLE ================= */}
+      <div className="border-2 border-orange-300 rounded-xl overflow-hidden bg-white">
+        {/* ================= DESKTOP VIEW ================= */}
+        <div className="hidden lg:block">
+          {/* HEADER */}
+          <div className="grid grid-cols-5 bg-black text-orange-500 font-semibold px-6 py-3 text-sm">
+            <div>Employee Name</div>
+            <div>Designation</div>
+            <div className="text-center">Present</div>
+            <div className="text-center">Absent</div>
+            <div>Reason</div>
+          </div>
+
+          {/* BODY */}
+          {filteredEmployees.map((emp, index) => {
+            const record = draftAttendance[emp.uid];
+
+            return (
+              <div
+                key={emp.uid}
+                onClick={() => setSelectedEmployee(emp)}
+                onDoubleClick={() => setSelectedEmployee(null)}
+                className={`grid grid-cols-5 px-6 py-4 border-t items-center cursor-pointer transition
+          ${
+            selectedEmployee?.uid === emp.uid
+              ? "bg-orange-50 border-l-4 border-orange-500"
+              : "hover:bg-gray-50"
+          }`}
+              >
+                {/* Name */}
+                <div className="font-medium text-gray-800">
+                  {index + 1}. {emp.firstName} {emp.lastName}
+                </div>
+
+                {/* Designation */}
+                <div className="text-gray-600">{emp.designation || "-"}</div>
+
+                {/* Present */}
+                <div className="flex justify-center">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 accent-green-500"
+                    checked={record?.status === "present"}
+                    onChange={() => saveAttendance(emp, "present")}
+                  />
+                </div>
+
+                {/* Absent */}
+                <div className="flex justify-center">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 accent-red-500"
+                    checked={record?.status === "absent"}
+                    onChange={() => saveAttendance(emp, "absent")}
+                  />
+                </div>
+
+                {/* Reason */}
+                <div>
+                  {record?.status === "absent" ? (
+                    <select
+                      value={record?.reason || ""}
+                      onChange={(e) =>
+                        saveAttendance(emp, "absent", e.target.value)
+                      }
+                      className="border rounded-md px-2 py-1 w-full"
+                    >
+                      <option value="">Select</option>
+                      {absenceReasons.map((r) => (
+                        <option key={r}>{r}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-gray-400 text-sm">—</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* BODY */}
-        {filteredEmployees.map((emp, index) => {
-          const record = draftAttendance[emp.uid];
+        {/* ================= MOBILE VIEW ================= */}
+        <div className="lg:hidden divide-y">
+          {filteredEmployees.map((emp, index) => {
+            const record = draftAttendance[emp.uid];
 
-          return (
-            <div
-              key={emp.uid}
-              onClick={() => setSelectedEmployee(emp)}
-              onDoubleClick={() => setSelectedEmployee(null)}
-              className={`grid grid-cols-5 min-w-[700px] px-6 py-4 border-t items-center cursor-pointer
-  ${selectedEmployee?.uid === emp.uid
-                  ? "bg-blue-50 border-l-4 border-blue-500 shadow-sm"
-                  : "hover:bg-gray-50"
+            return (
+              <div
+                key={emp.uid}
+                onClick={() => setSelectedEmployee(emp)}
+                className={`p-4 transition ${
+                  selectedEmployee?.uid === emp.uid
+                    ? "bg-orange-50"
+                    : "hover:bg-gray-50"
                 }`}
-            >
-              <div>
-                <span className="mr-2">{index + 1}.</span>
-                {emp.firstName} {emp.lastName}
-              </div>
-              <div>{emp.designation}</div>
+              >
+                {/* Top Row */}
+                <div className="flex justify-between items-start gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-sm text-gray-900 truncate">
+                      {index + 1}. {emp.firstName} {emp.lastName}
+                    </h3>
 
-              {/* Present */}
-              <div className="flex justify-center">
-                <input
-                  className="w-5 h-5"
-                  type="checkbox"
-                  checked={record?.status === "present"}
-                  onChange={() => saveAttendance(emp, "present")}
-                />
-              </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {emp.designation || "No Designation"}
+                    </p>
+                  </div>
 
-              {/* Absent */}
-              <div className="flex justify-center">
-                <input
-                  className="w-5 h-5"
-                  type="checkbox"
-                  checked={record?.status === "absent"}
-                  onChange={() => saveAttendance(emp, "absent")}
-                />
-              </div>
+                  <span className="text-[10px] px-2 py-1 rounded-full bg-orange-100 text-orange-600 whitespace-nowrap">
+                    Employee
+                  </span>
+                </div>
 
-              {/* Reason */}
-              <div>
-                {record?.status === "absent" && (
-                  <select
-                    value={record?.reason || ""}
-                    onChange={(e) =>
-                      saveAttendance(emp, "absent", e.target.value)
-                    }
-                    className="border rounded px-2 py-1 w-full"
+                {/* Attendance Buttons */}
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <button
+                    onClick={() => saveAttendance(emp, "present")}
+                    className={`rounded-lg py-3 text-sm font-semibold border transition ${
+                      record?.status === "present"
+                        ? "bg-green-500 text-white border-green-500"
+                        : "bg-white text-gray-700 border-gray-300"
+                    }`}
                   >
-                    <option value="">Select</option>
-                    {absenceReasons.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
+                    Present
+                  </button>
+
+                  <button
+                    onClick={() => saveAttendance(emp, "absent")}
+                    className={`rounded-lg py-3 text-sm font-semibold border transition ${
+                      record?.status === "absent"
+                        ? "bg-red-500 text-white border-red-500"
+                        : "bg-white text-gray-700 border-gray-300"
+                    }`}
+                  >
+                    Absent
+                  </button>
+                </div>
+
+                {/* Reason */}
+                {record?.status === "absent" && (
+                  <div className="mt-3">
+                    <select
+                      value={record?.reason || ""}
+                      onChange={(e) =>
+                        saveAttendance(emp, "absent", e.target.value)
+                      }
+                      className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm"
+                    >
+                      <option value="">Select Reason</option>
+                      {absenceReasons.map((r) => (
+                        <option key={r}>{r}</option>
+                      ))}
+                    </select>
+                  </div>
                 )}
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
       <div className="flex flex-col sm:flex-row justify-end gap-4 mt-6">
         <button
@@ -463,8 +549,9 @@ const EmployeeAttendancePage = () => {
         <button
           onClick={handleSaveAll}
           disabled={!hasChanges}
-          className={`px-5 py-2 rounded-md text-white ${hasChanges ? "bg-orange-500" : "bg-gray-400 cursor-not-allowed"
-            }`}
+          className={`px-5 py-2 rounded-md text-white ${
+            hasChanges ? "bg-orange-500" : "bg-gray-400 cursor-not-allowed"
+          }`}
         >
           Save
         </button>

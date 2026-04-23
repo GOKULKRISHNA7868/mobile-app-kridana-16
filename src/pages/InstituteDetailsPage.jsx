@@ -36,12 +36,13 @@ export default function InstituteDetailsPage() {
   const [inst, setInst] = useState(null);
   const [followersCount, setFollowersCount] = useState(0);
   const [mediaPosts, setMediaPosts] = useState([]);
-
   // ================= FETCH MEDIA FROM FIREBASE =================
 
   const [pageLoading, setPageLoading] = useState(true);
 
   // ================= FETCH INSTITUTE =================
+  // ================= REPLACE ONLY loadData useEffect =================
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -50,47 +51,75 @@ export default function InstituteDetailsPage() {
         const ref = doc(db, "institutes", id);
         const snap = await getDoc(ref);
 
-        if (snap.exists()) {
-          const data = { id: snap.id, ...snap.data() };
-          setInst(data);
-
-          const posts = [];
-
-          // images
-          if (
-            data.mediaGallery?.trainingImages &&
-            Array.isArray(data.mediaGallery.trainingImages)
-          ) {
-            data.mediaGallery.trainingImages.forEach((url, i) => {
-              posts.push({
-                id: `post_${id}_img_${i}`,
-                postId: `post_${id}_img_${i}`,
-                type: "image",
-                url,
-                title: "Training Session",
-              });
-            });
-          }
-
-          // reels
-          if (data.reels && Array.isArray(data.reels)) {
-            data.reels.forEach((url, i) => {
-              posts.push({
-                id: `${data.role || "institute"}_${id}_${i}`, // correct reelId
-                type: "video",
-                url,
-                title: "Practice Reel",
-              });
-            });
-          }
-
-          setMediaPosts(posts);
-        } else {
+        if (!snap.exists()) {
           setInst({});
+          setMediaPosts([]);
+          return;
         }
+
+        const data = { id: snap.id, ...snap.data() };
+        setInst(data);
+
+        const posts = [];
+
+        // =========================================
+        // FETCH TRAINING IMAGES
+        // supports:
+        // old => ["url1","url2"]
+        // new => [{url,about}]
+        // =========================================
+        const trainingImages = data.trainingImages || [];
+        const mediaTraining = data.mediaGallery?.trainingImages || [];
+
+        const allImages = [...trainingImages, ...mediaTraining];
+
+        allImages.forEach((item, i) => {
+          const url = typeof item === "string" ? item : item?.url;
+          const about = typeof item === "string" ? "" : item?.about || "";
+
+          if (!url) return;
+
+          posts.push({
+            id: `post_${id}_img_${i}`, // KEEP SAME SYSTEM
+            postId: `post_${id}_img_${i}`,
+            ownerId: id,
+            ownerType: "institute",
+            type: "image",
+            url,
+            title: about || "Training Session",
+          });
+        });
+
+        // =========================================
+        // FETCH REELS
+        // supports:
+        // old => ["url.mp4"]
+        // new => [{url,about}]
+        // =========================================
+        const reels = data.reels || [];
+
+        reels.forEach((item, i) => {
+          const url = typeof item === "string" ? item : item?.url;
+          const about = typeof item === "string" ? "" : item?.about || "";
+
+          if (!url) return;
+
+          posts.push({
+            id: `institute_${id}_${i}`, // KEEP SAME REEL ID SYSTEM
+            reelId: `institute_${id}_${i}`,
+            ownerId: id,
+            ownerType: "institute",
+            type: "video",
+            url,
+            title: about || "",
+          });
+        });
+
+        setMediaPosts(posts);
       } catch (error) {
         console.log(error);
         setInst({});
+        setMediaPosts([]);
       } finally {
         setPageLoading(false);
       }
@@ -98,22 +127,46 @@ export default function InstituteDetailsPage() {
 
     if (id) loadData();
   }, [id]);
-
   // ================= LOADING FIX =================
 
   // ================= VIEW SAVE =================
-  const handleView = async (postId) => {
-    const user = auth.currentUser;
+  const handleView = async () => {
+    if (!user) {
+      setOpenPreview(true);
+      return;
+    }
 
-    if (!user) return;
+    try {
+      if (isReel) {
+        const docId = `${itemId}_${user.uid}`;
 
-    const refId = `${postId}_${user.uid}`;
+        await setDoc(
+          doc(db, "reelViews", docId),
+          {
+            reelId: itemId,
+            userId: user.uid,
+            createdAt: serverTimestamp(),
+          },
+          { merge: true }, // duplicate safe
+        );
+      } else {
+        const docId = `${itemId}_${user.uid}`;
 
-    await setDoc(doc(db, "postviews", refId), {
-      postId,
-      userId: user.uid,
-      createdAt: serverTimestamp(),
-    });
+        await setDoc(
+          doc(db, "postviews", docId),
+          {
+            postId: itemId,
+            userId: user.uid,
+            createdAt: serverTimestamp(),
+          },
+          { merge: true }, // duplicate safe
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+
+    setOpenPreview(true);
   };
 
   // ================= LIKE TOGGLE =================
@@ -358,7 +411,7 @@ export default function InstituteDetailsPage() {
 
 function MediaCard({ post }) {
   const isReel = post.type === "video";
-
+  const [openPreview, setOpenPreview] = useState(false);
   const [likes, setLikes] = useState(0);
   const [views, setViews] = useState(0);
   const [comments, setComments] = useState(0);
@@ -575,78 +628,131 @@ function MediaCard({ post }) {
     setCommentText("");
   };
 
+  // ================= REPLACE ONLY MediaCard RETURN =================
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-      {isReel ? (
-        <video
-          src={post.url}
-          controls
-          onPlay={handleView}
-          className="w-full h-56 object-cover"
-        />
-      ) : (
-        <img
-          src={post.url}
-          alt=""
-          onClick={handleView}
-          className="w-full h-56 object-cover"
-        />
-      )}
+    <>
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        {isReel ? (
+          <video
+            src={post.url}
+            controls
+            onPlay={handleView}
+            onClick={handleView}
+            className="w-full h-56 object-cover cursor-pointer"
+          />
+        ) : (
+          <img
+            src={post.url}
+            alt=""
+            onClick={handleView}
+            className="w-full h-56 object-cover cursor-pointer"
+          />
+        )}
 
-      <div className="p-4">
-        <div className="flex justify-between text-sm text-gray-500">
-          <button
-            onClick={handleLike}
-            className={`flex gap-1 items-center ${liked ? "text-red-500" : ""}`}
-          >
-            <Heart size={17} fill={liked ? "currentColor" : "none"} />
-            {likes}
-          </button>
-
-          <div className="flex gap-1 items-center">
-            <Eye size={17} />
-            {views}
-          </div>
-
-          <button
-            onClick={() => setShowCommentBox(!showCommentBox)}
-            className="flex gap-1 items-center"
-          >
-            <MessageCircle size={17} />
-            {comments}
-          </button>
-        </div>
-
-        {showCommentBox && (
-          <div className="mt-3">
-            <div className="flex gap-2">
-              <input
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                className="flex-1 border px-3 py-2 rounded-lg text-sm"
-                placeholder="Write comment..."
-              />
-
-              <button
-                onClick={sendComment}
-                className="bg-[#FF6B00] text-white px-4 rounded-lg"
-              >
-                Send
-              </button>
-            </div>
-
-            <div className="mt-3 max-h-40 overflow-y-auto space-y-2">
-              {commentList.map((c) => (
-                <div key={c.id} className="bg-gray-100 px-3 py-2 rounded-lg">
-                  <p className="text-xs font-semibold">{c.userName}</p>
-                  <p className="text-sm">{c.text}</p>
-                </div>
-              ))}
-            </div>
+        {/* ABOUT TEXT */}
+        {post.title && (
+          <div className="px-4 pt-3">
+            <p className="text-sm sm:text-base text-gray-800 leading-6 break-words whitespace-pre-wrap">
+              {post.title}
+            </p>
           </div>
         )}
+
+        <div className="p-4">
+          <div className="flex justify-between text-sm text-gray-500">
+            <button
+              onClick={handleLike}
+              className={`flex gap-1 items-center ${
+                liked ? "text-red-500" : ""
+              }`}
+            >
+              <Heart size={17} fill={liked ? "currentColor" : "none"} />
+              {likes}
+            </button>
+
+            <div className="flex gap-1 items-center">
+              <Eye size={17} />
+              {views}
+            </div>
+
+            <button
+              onClick={() => setShowCommentBox(!showCommentBox)}
+              className="flex gap-1 items-center"
+            >
+              <MessageCircle size={17} />
+              {comments}
+            </button>
+          </div>
+
+          {showCommentBox && (
+            <div className="mt-3">
+              <div className="flex gap-2">
+                <input
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  className="flex-1 border px-3 py-2 rounded-lg text-sm"
+                  placeholder="Write comment..."
+                />
+
+                <button
+                  onClick={sendComment}
+                  className="bg-[#FF6B00] text-white px-4 rounded-lg"
+                >
+                  Send
+                </button>
+              </div>
+
+              <div className="mt-3 max-h-40 overflow-y-auto space-y-2">
+                {commentList.map((c) => (
+                  <div key={c.id} className="bg-gray-100 px-3 py-2 rounded-lg">
+                    <p className="text-xs font-semibold">{c.userName}</p>
+                    <p className="text-sm">{c.text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* FULL SCREEN PREVIEW */}
+      {openPreview && (
+        <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-3">
+          <button
+            onClick={() => setOpenPreview(false)}
+            className="absolute top-4 right-4 text-white text-3xl"
+          >
+            ✕
+          </button>
+
+          <div className="w-full max-w-md">
+            {isReel ? (
+              <video
+                src={post.url}
+                controls
+                autoPlay
+                className="w-full max-h-[80vh] object-contain rounded-2xl"
+              />
+            ) : (
+              <img
+                src={post.url}
+                alt=""
+                className="w-full max-h-[80vh] object-contain rounded-2xl"
+              />
+            )}
+
+            {post.title && (
+              <div className="mt-4 bg-white rounded-2xl p-4">
+                <p className="text-sm sm:text-base text-gray-800 leading-6 break-words whitespace-pre-wrap">
+                  {post.title}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 function Section({ title, children }) {
